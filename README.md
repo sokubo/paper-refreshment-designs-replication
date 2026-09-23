@@ -18,7 +18,7 @@ Preprint: arXiv:XXXX.XXXXX (to be filled at posting). Author: Shoki Okubo (Toyo 
 release-check records (`RELEASE_CHECK*`), which are written after the manifest.
 
 ## Checked commit and release record
-Computational commit checked against the manuscript: not yet checked (a release check is run after the first publication; see `RELEASE_CHECK.md` once present)
+Computational commit checked against the manuscript: `0869ad8b752fe2fd0b85f6766071b481d71b200f` — see `RELEASE_CHECK.md`, `RELEASE_CHECK_run.log` (the console output of the clean-copy run) and `RELEASE_CHECK_sessionInfo.txt`. Later commits change documentation and the release record only — `git diff --stat 0869ad8b752fe2fd0b85f6766071b481d71b200f HEAD` lists them — so the scripts and outputs are those of the checked commit; after any change to code or outputs the release check is rerun and this line is regenerated.
 Tag matching this version of the manuscript: `paper-v0.5`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
 Third-party reproduction: none. The release record is the author's own re-execution of the published snapshot in a clean copy.
 

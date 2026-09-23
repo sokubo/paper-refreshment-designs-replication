@@ -1,0 +1,112 @@
+== sims/Rscript sim1_bounds.R 16:30:28
+   beta h_true p_target n_ok coverage coverage_v1_rule mean_width  mean_hL
+1   0.0    0.0      0.6  200    1.000            1.000      0.582 -0.30140
+2   0.3    0.0      0.6  200    1.000            1.000      0.607 -0.18450
+3   0.6    0.0      0.6  200    0.950            0.950      0.678 -0.11595
+4   0.0    0.2      0.6  200    1.000            1.000      0.595 -0.10020
+5   0.3    0.2      0.6  200    1.000            1.000      0.612  0.00705
+6   0.6    0.2      0.6  200    0.930            0.930      0.667  0.09055
+7   0.0    0.0      0.8  199    0.965            0.965      0.260 -0.13050
+8   0.3    0.0      0.8  199    0.894            0.894      0.265 -0.07769
+9   0.6    0.0      0.8  200    0.815            0.815      0.324 -0.04605
+10  0.0    0.2      0.8  200    0.965            0.965      0.252  0.07125
+11  0.3    0.2      0.8  200    0.895            0.895      0.266  0.12485
+12  0.6    0.2      0.8  200    0.760            0.760      0.309  0.15975
+   mean_hU naive_bias theory_width_note pop_hL pop_hU pop_width relaxed_hL
+1    0.281  -0.003671               0.0    0.0  0.000     0.000    -0.3035
+2    0.422   0.117704               0.3    0.0  0.260     0.260    -0.1995
+3    0.562   0.219673               0.6    0.0  0.489     0.489    -0.1300
+4    0.495   0.002817               0.0    0.2  0.200     0.000    -0.1035
+5    0.619   0.116430               0.3    0.2  0.460     0.260     0.0005
+6    0.757   0.217650               0.6    0.2  0.689     0.489     0.0700
+7    0.130  -0.000766               0.0    0.0  0.000     0.000    -0.1535
+8    0.187   0.056073               0.3    0.0  0.145     0.145    -0.1045
+9    0.278   0.115765               0.6    0.0  0.262     0.262    -0.0750
+10   0.323  -0.003544               0.0    0.2  0.200     0.000     0.0465
+11   0.391   0.058233               0.3    0.2  0.345     0.145     0.0955
+12   0.469   0.114333               0.6    0.2  0.462     0.262     0.1250
+   relaxed_hU relaxed_width
+1       0.304         0.607
+2       0.435         0.635
+3       0.577         0.707
+4       0.504         0.607
+5       0.635         0.635
+6       0.777         0.707
+7       0.153         0.307
+8       0.224         0.328
+9       0.308         0.383
+10      0.353         0.307
+11      0.424         0.328
+12      0.508         0.383
+== sims/Rscript sim2_multicohort.R 16:33:08
+true (population-SD units): tau(13)-tau(9) = 0.00907376, tau(13)-tau(1) = 0.10078530
+          cell bias_inc_naive bias_inc_unitG bias_inc_trueG mcse_inc_trueG
+1      matched         0.1522        0.04316       0.002337       0.002449
+2 generational         0.1517        0.04120      -0.000161       0.002774
+3       drift3         0.1548        0.03003      -0.016685       0.002475
+  rmse_inc_trueG bias_inc_screen bias_inc_median bias_lvl_trueG mcse_lvl_trueG
+1        0.04242       0.0023800       0.0019859       0.003065       0.002207
+2        0.04797      -0.0001999      -0.0006447      -0.250006       0.002229
+3        0.04593      -0.0067121      -0.0063232      -0.019715       0.002271
+  bias_inc_v2 bias_lvl_v2 Q_reject_rate item_flag_rate false_flag_rate
+1    0.008980    0.018718      0.006667        0.02000        0.007500
+2    0.006083   -0.245016      0.003333        0.01667        0.005667
+3   -0.011080   -0.005159      0.340000        0.68333        0.005000
+  mean_n_screened   R
+1           0.170 300
+2           0.130 300
+3           1.077 300
+
+population limits
+       cohort_1     cohort_5 cohort_13
+p  0.1479102423 0.2538416271         1
+mu 0.8469853389 0.6337711963         0
+V  0.7001135955 0.7604727356         1
+   contrast generational      target plim_naive   plim_trueG plim_unitG
+1 increment        FALSE 0.009073758  0.1598389  0.009073758 0.05014115
+2     level        FALSE 0.100785301  0.6996944  0.100785301 0.26392402
+3     level         TRUE 0.100785301  0.4522070 -0.146702072 0.01643664
+      plim_v2 gamma_pair_specific asy_bias_trueG asy_bias_unitG  asy_bias_v2
+1  0.01539191            1.423883   0.000000e+00     0.04106739  0.006318149
+2  0.11633579            1.400333  -1.387779e-17     0.16313871  0.015550486
+3 -0.14098538            1.400333  -2.474874e-01    -0.08434866 -0.241770682
+  asy_bias_naive
+1      0.1507652
+2      0.5989091
+3      0.3514217
+== sims/Rscript sim3_designs.R 16:33:16
+Part A done (0.9 min)
+run time: 4.8 min
+done
+== sims/Rscript check_funnel_examples.R > check_funnel_examples_output.txt 16:38:03
+== sims/Rscript check_multiwave_completion.R > check_multiwave_completion_output.txt 16:38:07
+== sims/python3 check_design_rank.py > check_design_rank_output.txt 16:38:12
+== sims/Rscript check_manuscript_values.R 16:38:23
+66 assertions passed, 0 failed
+== sims/Rscript check_manuscript_values.R --selftest 16:38:24
+66 assertions passed, 0 failed
+selftest perturb : fails as it should
+selftest droprow : fails as it should
+== sims/python3 compare_outputs.py --selftest output_shipped 16:38:24
+self-test of compare_outputs.py on corrupted copies of output_shipped (18 cases)
+
+   unmodified copy                                                                      -> pass   as expected
+   CSV text label changed in the first data row (sim2_plim.csv)                         -> FAIL   as expected
+   CSV integer count +1 (sim1_results.csv)                                              -> FAIL   as expected
+   CSV numeric cell perturbed by 1e-6 (sim2_plim.csv)                                   -> FAIL   as expected
+   CSV numeric cell perturbed by 1e-12 (sim2_plim.csv)                                  -> pass   as expected
+   CSV numeric cell replaced by NA (sim2_plim.csv)                                      -> FAIL   as expected
+   CSV missing cell replaced by 0 (sim3_estimators.csv)                                 -> FAIL   as expected
+   CSV missing cell written as NaN instead of empty/NA (sim3_estimators.csv)            -> pass   as expected
+   CSV last data row duplicated (sim2_plim.csv)                                         -> FAIL   as expected
+   CSV last data row deleted (sim2_plim.csv)                                            -> FAIL   as expected
+   CSV two data rows swapped (sim2_plim.csv)                                            -> FAIL   as expected
+   CSV last column dropped (sim2_plim.csv)                                              -> FAIL   as expected
+   CSV column renamed in the header (sim2_plim.csv)                                     -> FAIL   as expected
+   CSV file missing from the regenerated set (sim3_variance_check.csv)                  -> FAIL   as expected
+   TXT numeric token changed in the last displayed digit (check_funnel_examples_output.txt) -> FAIL   as expected
+   TXT verdict/word changed ('identified') (check_funnel_examples_output.txt)           -> FAIL   as expected
+   TXT trailing whitespace and CRLF line endings (check_funnel_examples_output.txt)     -> pass   as expected
+   TXT one non-blank line deleted (check_funnel_examples_output.txt)                    -> FAIL   as expected
+
+self-test passed: 14 corruptions all detected, 4 benign variants all accepted
