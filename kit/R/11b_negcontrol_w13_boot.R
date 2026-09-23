@@ -40,8 +40,8 @@ main <- function() {
   t0 <- Sys.time()
   nc <- fread(file.path(RESULTS_DIR, "03_negcontrol_sets_v1.csv"))
   nc <- nc[complete3 == 1]
-  f_all <- list.files(RAW_DIR, pattern = "\\.dta$", full.names = TRUE)
-  f <- f_all[!grepl("online", basename(f_all), ignore.case = TRUE)][1]
+  f <- input_dta(); fp <- input_fingerprint(f)
+  cat(sprintf("input: %s (%s bytes; md5 %s; sha256 %s)\n", fp$file, fp$bytes, fp$md5, fp$sha256))
   d <- as.data.table(read_dta(f))
   gc_ <- function(nm) { hit <- names(d)[toupper(trimws(names(d))) == toupper(nm)]; if (!length(hit)) return(NULL); d[[hit[1]]] }
   num <- function(x) if (is.null(x)) NULL else suppressWarnings(as.numeric(zap_labels(x)))
@@ -145,7 +145,7 @@ main <- function() {
     chk[, agree := abs(value_11b - value_11) < 1e-4] }
   write_aggregate(chk, "11b_check_vs_11.csv", exempt = c("value_11b", "value_11"))
   writeLines(c(paste("time:", format(Sys.time())), R.version.string, paste("data.table", packageVersion("data.table")),
-               paste("haven", packageVersion("haven")), paste("input:", basename(f)), paste("B:", B_BOOT, "seed:", SEED11B),
+               paste("haven", packageVersion("haven")), paste("input:", basename(f)), paste("input size:", fp$bytes), paste("input md5:", fp$md5), paste("input sha256:", fp$sha256), paste("B:", B_BOOT, "seed:", SEED11B),
                paste("rejected item index (BH q < .10):", paste(rej, collapse = ","))), file.path(RESULTS_DIR, "11b_env.txt"))
   print(out); print(corr); print(grid); print(chk)
   cat(sprintf("\n== 11b done (%.1f min). Please share results/11b_*.csv and 11b_env.txt (aggregates only). ==\n",

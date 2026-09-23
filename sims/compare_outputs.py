@@ -58,7 +58,11 @@ def read_text(path):
 def compare_csv(pnew, pold, tol):
     new = list(csv.reader(io.StringIO(read_text(pnew))))
     old = list(csv.reader(io.StringIO(read_text(pold))))
-    new = [r for r in new if any(c.strip() for c in r)]; old = [r for r in old if any(c.strip() for c in r)]
+    # drop physical blank lines only (a record with no field or a single empty field); a record that carries
+    # delimiters but only empty fields is a data row and must be counted, so that an appended all-empty
+    # record changes the row count and fails the comparison
+    blank = lambda r: len(r) == 0 or (len(r) == 1 and not r[0].strip())
+    new = [r for r in new if not blank(r)]; old = [r for r in old if not blank(r)]
     if not new or not old:
         return False, 0.0, 0, "empty file (%d vs %d rows)" % (len(new), len(old))
     if new[0] != old[0]:
@@ -178,6 +182,8 @@ def selftest(srcdir, tol):
     if with_na:
         case("CSV missing cell replaced by 0 (%s)" % with_na, True, lambda d: edit(d, with_na, lambda s: (lambda ij: csv_cell(s, ij[0], ij[1], lambda v: "0"))(first_na(s))))
         case("CSV missing cell written as NaN instead of empty/NA (%s)" % with_na, False, lambda d: edit(d, with_na, lambda s: (lambda ij: csv_cell(s, ij[0], ij[1], lambda v: "NaN"))(first_na(s))))
+    case("CSV all-empty record appended (delimiters only) (%s)" % c0, True, lambda d: edit(d, c0, lambda s: s.rstrip("\n") + "\n" + "," * (len(list(csv.reader([csv_rows(s)[0]]))[0]) - 1) + "\n"))
+    case("CSV blank physical lines appended (%s)" % c0, False, lambda d: edit(d, c0, lambda s: s.rstrip("\n") + "\n\n\n"))
     case("CSV last data row duplicated (%s)" % c0, True, lambda d: edit(d, c0, lambda s: s.rstrip("\n") + "\n" + csv_rows(s)[-1] + "\n"))
     case("CSV last data row deleted (%s)" % c0, True, lambda d: edit(d, c0, lambda s: "\n".join(csv_rows(s)[:-1]) + "\n"))
     case("CSV two data rows swapped (%s)" % c0, True, lambda d: edit(d, c0, lambda s: (lambda r: "\n".join([r[0], r[2], r[1]] + r[3:]) + "\n")(csv_rows(s))))

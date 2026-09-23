@@ -70,7 +70,7 @@ run_checks <- function(s1, s2, p2, e3, g3, v3, pr3, D12, D3, drk) {
   E <- function(rn, es, g = 0.3) one(e3, regime = rn, gamma = g, estimator = es)
   G <- function(rn, g = 0.3) one(g3, regime = rn, gamma = g)
   labs <- c(MCAR = "MCAR", MAR_X = "MAR on $X$", MNAR_trait = "MNAR trait", MNAR_nonstat = "MNAR non-stationary",
-            MNAR_state = "MNAR state-dependent", MNAR_both = "MNAR both (non-stationary and state-dependent)")
+            MNAR_state = "MNAR state-dependent", MNAR_both = "MNAR, both failures")
   bold <- list(MNAR_nonstat = c("sm", "ssm", "TNS"), MNAR_state = c("sm", "ec", "TSD"), MNAR_both = c("ssm", "ec", "TNS", "TSD"))
   fb <- function(x) { s <- m3(x); if (x > 0 && s != ".000") s <- paste0("+", s); s }
   for (rn in names(labs)) {

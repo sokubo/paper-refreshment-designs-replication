@@ -18,8 +18,8 @@ Preprint: arXiv:XXXX.XXXXX (to be filled at posting). Author: Shoki Okubo (Toyo 
 release-check records (`RELEASE_CHECK*`), which are written after the manifest.
 
 ## Checked commit and release record
-Computational commit checked against the manuscript: `0869ad8b752fe2fd0b85f6766071b481d71b200f` — see `RELEASE_CHECK.md`, `RELEASE_CHECK_run.log` (the console output of the clean-copy run) and `RELEASE_CHECK_sessionInfo.txt`. Later commits change documentation and the release record only — `git diff --stat 0869ad8b752fe2fd0b85f6766071b481d71b200f HEAD` lists them — so the scripts and outputs are those of the checked commit; after any change to code or outputs the release check is rerun and this line is regenerated.
-Tag matching this version of the manuscript: `paper-v0.5`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
+Computational commit checked against the numerical results of the manuscript: not yet checked for this version. The `RELEASE_CHECK*` files in this snapshot are the record of the previously checked commit `0869ad8b752fe2fd0b85f6766071b481d71b200f`, whose scripts or outputs differ from these; the release check is rerun on this version before it is tagged, and this line is then regenerated.
+Tag of the checked release: `paper-v0.6`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
 Third-party reproduction: none. The release record is the author's own re-execution of the published snapshot in a clean copy.
 
 ## Data
@@ -48,20 +48,21 @@ Run the `sims/` steps from `sims/`.
 | 1 | `sims/sim1_bounds.R` | `sim1_results.csv` | ~5 min | Appendix, Simulation 1; Figure 1; Remark 2; Section 5 |
 | 2 | `sims/sim2_multicohort.R` | `sim2_results.csv`, `sim2_plim.csv` | ~20 s | Appendix, Simulation 2 |
 | 3 | `sims/sim3_designs.R` | `output/sim3_estimators.csv`, `sim3_diagnostics.csv`, `sim3_variance_check.csv`, `sim3_pairs.csv`, `sim3_partD.csv`, `sim3_partD_bootstrap.csv`, `sim3_summary.txt` | ~10 min | Section 8 (Monte Carlo evidence); Appendix, Simulation 3 and Table 2; Appendix on variances |
-| 4 | `sims/check_funnel_examples.R` | `check_funnel_examples_output.txt` (console) | ~10 s | Corollaries 2–5, Theorem 3, Proposition 1, Theorem 4(a): worked examples and counterexamples |
+| 4 | `sims/check_funnel_examples.R` | `check_funnel_examples_output.txt` (console) | ~10 s | Corollaries 2–5, Theorem 3, Proposition 1, Theorem 4(a) (blocks 11 and 12): worked examples and counterexamples |
 | 5 | `sims/check_multiwave_completion.R` | `check_multiwave_completion_output.txt` (console) | ~10 s | Lemma 2, Theorem 2, Corollary 4, Corollary 6 |
 | 6 | `python3 sims/check_design_rank.py` | `check_design_rank_output.txt` (console) | ~40 s | Theorem 5, Proposition 7, Table 1 |
 | 7 | `sims/check_manuscript_values.R --selftest` | console | seconds | every simulation and design-rank value quoted in the manuscript |
 | 8 | `manuscript/figures/make_fig1_funnel.py` | `fig1_funnel.png/pdf` | seconds | Figure 1 |
 | 9 | `kit/R/15_make_synthetic.R` | `$P1_DATA_DIR/raw/*.dta`, byte-identical to `kit/synthetic/*.dta` | ~1 s | the public stand-in for the restricted input |
-| 10 | `kit/R/04_build_analysis.R` + `kit/R/15_panelcond_designs.R --B 50` + `kit/R/15b_item_flags.R` | `$P1_RESULTS_DIR/*`, identical to `kit/synthetic_out/*` apart from `15_env.txt` | ~10 s | the Section 10 pipeline, run on synthetic data |
-| 11 | `kit/check_manuscript_values_T2.R <results dir>` | console | seconds | every number quoted in Section 10, reprinted from the aggregate outputs |
+| 10 | `kit/R/15_test_mass_ratio.R`, then `kit/R/04_build_analysis.R` + `kit/R/15_panelcond_designs.R --B 50` + `kit/R/15b_item_flags.R` | console (18 checks); `$P1_RESULTS_DIR/*`, identical to `kit/synthetic_out/*` apart from `15_env.txt` | ~30 s | the unit test of the mass-domination computation; the Section 10 pipeline of the 2011 episode, run on synthetic data |
+| 11 | `kit/check_manuscript_values_T2.R <results dir> --selftest` | console | seconds | every number quoted in Section 10, reprinted from the aggregate outputs after checking that all of them come from one input file; then the checker's self-test |
 
 Steps 1–8 are self-contained and use no data; steps 9–10 are run from `kit/` with the environment
 variables set as in `kit/KIT_README.md` (Section 2). Step 7 fails if any quoted value no longer matches its
 output cell, and its `--selftest` mode confirms that a perturbed value and a deleted row make it fail.
-Steps 9–10 are the **pipeline check**: they exercise the same code that produces Section 10, on
-synthetic input whose numbers are not the paper's. Step 11 is the prose-versus-output check for
+Steps 9–10 are the **pipeline check**: they exercise the code that produces the 2011-episode results of
+Section 10, on synthetic input whose numbers are not the paper's; the 2019 battery scripts (`kit/R/11*`)
+need a confidential item map and are not exercised. Step 11 is the prose-versus-output check for
 Section 10, run by a licensed user against the real aggregates.
 
 ## The restricted data
@@ -79,7 +80,7 @@ are theorems, and the appendix that supports them is synthetic throughout.
 
 - Theorem 1, Corollaries 1–3, Remarks 1–2, the central-binding and logistic examples, Theorem 3: `sims/check_funnel_examples.R`, `sims/sim1_bounds.R`.
 - Corollary 4 (discrete outcomes), Lemma 2 and Theorem 2 (pattern completion), Corollary 6 (mean bounds): `sims/check_multiwave_completion.R`; the counterexamples to the earlier forms of Corollary 4 and Corollary 5, and Proposition 1: `sims/check_funnel_examples.R`.
-- Theorem 4 and Corollary 7 (two refreshments, generational case): `sims/sim2_multicohort.R`; the joint-loading example of Theorem 4(a): `sims/check_funnel_examples.R`.
+- Theorem 4 and Corollary 7 (two refreshments, generational case): `sims/sim2_multicohort.R`; the common-loading example and the marginal-versus-joint information example of Theorem 4(a): `sims/check_funnel_examples.R` (blocks 11 and 12).
 - Propositions 2–6 (the three designs, their biases, the diagnostics) and the variance formulas: `sims/sim3_designs.R`.
 - Theorem 5, Proposition 7 and Table 1 (design rank, stride, follow-up): `sims/check_design_rank.py`.
 - Section 10: `kit/` — see `kit/KIT_README.md`.

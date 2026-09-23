@@ -26,8 +26,8 @@ main <- function() {
   cat("diag: complete3の負対照セット =", nrow(nc), "\n")
 
   # 2020ウェブ特別調査ファイル(JLPSYM_online_*)が同居してもマスタを確実に選ぶ
-  f_all <- list.files(RAW_DIR, pattern = "\\.dta$", full.names = TRUE)
-  f <- f_all[!grepl("online", basename(f_all), ignore.case = TRUE)][1]
+  f <- input_dta(); fp <- input_fingerprint(f)
+  cat(sprintf("input: %s (%s bytes; md5 %s; sha256 %s)\n", fp$file, fp$bytes, fp$md5, fp$sha256))
   d <- as.data.table(read_dta(f))
   gc_ <- function(nm) { hit <- names(d)[toupper(trimws(names(d))) == toupper(nm)]
     if (!length(hit)) return(NULL); d[[hit[1]]] }
@@ -166,8 +166,12 @@ main <- function() {
     cat("ない(2019補充と旧コホートは出生年サポートが非重複)。エアコン・パソコン等が\n")
     cat("大きく出るのは世代効果そのもの。βとして引用しないこと。\n")
   }
+  writeLines(c(paste("time:", format(Sys.time())), paste("R", getRversion()),
+               paste("input:", fp$file), paste("input size:", fp$bytes),
+               paste("input md5:", fp$md5), paste("input sha256:", fp$sha256)),
+             file.path(RESULTS_DIR, "11_env.txt"))
   cat("\n== 11 v3 完了。共有してほしいもの ==\n")
-  cat("コンソール出力全文 + 11_negcontrol_w13.csv / 11_negcontrol_w13_summary.csv\n")
+  cat("コンソール出力全文 + 11_negcontrol_w13.csv / 11_negcontrol_w13_summary.csv / 11_env.txt\n")
 }
 
 run_guarded("11_negcontrol_w13", main)

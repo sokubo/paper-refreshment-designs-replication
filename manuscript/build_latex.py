@@ -17,8 +17,8 @@ LTX  = os.path.join(HERE, 'latex')
 
 # --- the two footnotes on the title page -------------------------------------
 ARCHIVE_REPO = 'https://github.com/sokubo/paper-refreshment-designs-replication'
-ARCHIVE_TAG = 'paper-v0.5'
-ARCHIVE_COMMIT = '0869ad8'          # filled in after the release check of the published snapshot
+ARCHIVE_TAG = 'paper-v0.6'
+ARCHIVE_COMMIT = 'COMMIT7'          # filled in after the release check of the published snapshot
 TITLE_THANKS = (
     r"\thanks{Code for every simulation and deterministic check in this paper is in the replication "
     r"archive at \url{%s} (fixed version: tag \texttt{%s}, commit \texttt{%s}). The empirical "
@@ -31,8 +31,8 @@ AUTHOR_THANKS = (
     r"Email: okubo080@toyo.jp. Website: sokubo.github.io.}"
 )
 DATE = 'September 23, 2026'
-KEYWORDS = (r"\noindent\textbf{Keywords:} panel conditioning; refreshment samples; "
-            r"attrition; partial identification; survey design; rotation panels")
+KEYWORDS = (r"\noindent\textbf{Keywords:} attrition; panel conditioning; partial identification; "
+            r"refreshment samples; rotation panels; survey design")
 # -----------------------------------------------------------------------------
 
 _src = open(os.path.join(HERE, 'main.qmd')).read()

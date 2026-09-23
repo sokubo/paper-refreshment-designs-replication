@@ -49,6 +49,13 @@
 (10) covariate predicting retention only (Proposition 1)
   ok    pooled p = .5: half-width log 2; strata p = .8, .2: intersection half-width log 1.25
 (11) bounded common loading (Theorem 4(a))
-  ok    joint feasible loading set {0}: tau_1 = C1 - Gamma N1 = 0, not the separate outer bound [-log 2, 0]
+  ok    common-loading feasible set {0}: tau_1 = C1 - Gamma N1 = 0, not the per-pair outer bound [-log 2, 0]
+(12) marginal versus joint target-battery information (Theorem 4(a))
+  ok    p = .5, C = 0, N = .6: the true loading is C / N = 0
+  ok    marginal information: Gamma in [0, 0.8165] on the grid; closed form [0, b log 2 / .6] = [0, 0.816882]
+  ok    joint information (both strata): Gamma in [0, 0.2625] on the grid; closed form [0, b log 1.25 / .6] = [0, 0.262977]
+  ok    Gamma = .5 (shift -.3): pooled constraint p exp(.3/b) = 0.764233 <= 1
+  ok    Gamma = .5: stratum X = 1 requires .8 exp(.3/b) = 1.222772 <= 1, which fails
+  ok    so no completion keeps F(. | X = 1): the implied attriter density there has a negative part (min -0.5153)
 
 all checks passed

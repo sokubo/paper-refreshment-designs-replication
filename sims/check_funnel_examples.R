@@ -1,6 +1,6 @@
 # ============================================================
 # Deterministic checks of the worked examples and counterexamples of Sections 3-6 of the refreshment-designs
-# paper.  Version 2 (adds blocks 5-11).  No randomness; grids in log space; stops on any failed assertion.
+# paper.  Version 3 (adds block 12; version 2 added blocks 5-11).  No randomness; grids in log space; stops on any failed assertion.
 #   (1) f2 = N(0,1), Q = N(-1,1), p = .5: identified set {-1} (Theorem 3's example of a degenerate interval).
 #   (2) Gaussian-logistic example of Corollary 2: sigma^2 = beta = 1, alpha = -1 (retention .30): Delta* = 1 attained.
 #   (3) Corollary 3(i): outcome-independent attrition, f2 = Q = N(0,1): {0} at every p < 1 (the constraint fails only
@@ -20,6 +20,8 @@
 #       domination constraints (c'(y) = 2y); in the location family the restriction does not bind.
 #  (10) Proposition 1: a covariate that predicts retention only tightens the set (Laplace strata, p(x) = .8, .2).
 #  (11) Theorem 4(a) with a bounded common loading: episode constraints must be intersected jointly in Gamma.
+#  (12) Theorem 4(a) under marginal versus joint target-battery information: with a battery that predicts retention,
+#       the loading set computed from the margins is an outer bound for the joint data (binary X, Laplace Y*).
 # ============================================================
 ys <- seq(-40, 40, by = 0.002)
 lsup <- function(v) max(v)                                         # log sup over the grid
@@ -116,5 +118,29 @@ Gs <- seq(0, 1, by = 0.001)
 lap_ok <- function(t) abs(t) <= log(2) + 1e-12                      # episode 1: Laplace F = Q, p = .5, C1 = 0, N1 = 1
 gau_ok <- function(t) abs(t - 10) <= 1e-12                          # episode 2: F = N(0,1), Q = N(10,1), p = .5 -> {10}
 joint <- Gs[sapply(Gs, function(G) lap_ok(0 - G * 1) && gau_ok(10 - G * 1))]
-ok(length(joint) == 1 && joint == 0, "joint feasible loading set {0}: tau_1 = C1 - Gamma N1 = 0, not the separate outer bound [-log 2, 0]")
+ok(length(joint) == 1 && joint == 0, "common-loading feasible set {0}: tau_1 = C1 - Gamma N1 = 0, not the per-pair outer bound [-log 2, 0]")
+cat("(12) marginal versus joint target-battery information (Theorem 4(a))\n")
+b12 <- 1 / sqrt(2)                                                  # Laplace scale: variance 2 b^2 = 1, like X = +-1
+dlapb <- function(y) -abs(y) / b12 - log(2 * b12)
+px <- c(0.8, 0.2); wx <- c(0.5, 0.5); xv <- c(1, -1)               # retention by battery stratum, independent of Y*
+p12 <- sum(wx * px)                                                 # pooled retention
+N12 <- sum(wx * px * xv) / p12 - sum(wx * xv)                       # battery contrast: survivors' mean of X minus the cohort's
+C12 <- 0                                                            # Y* independent of X, identity map: target contrast zero
+ok(abs(p12 - 0.5) < 1e-15 && abs(N12 - 0.6) < 1e-15, "p = .5, C = 0, N = .6: the true loading is C / N = 0")
+feas12 <- function(p, hs) log(p) + lsup(dlapb(ys + hs) - dlapb(ys)) <= 1e-9
+Gs12 <- seq(0, 1, by = 0.0005)
+marg12 <- Gs12[sapply(Gs12, function(G) feas12(p12, C12 - G * N12))]
+cond12 <- Gs12[sapply(Gs12, function(G) all(sapply(px, function(p) feas12(p, C12 - G * N12))))]
+gm <- b12 * log(2) / 0.6; gc <- b12 * log(1.25) / 0.6
+ok(min(marg12) == 0 && max(marg12) <= gm && gm - max(marg12) < 5e-4,
+   sprintf("marginal information: Gamma in [0, %.4f] on the grid; closed form [0, b log 2 / .6] = [0, %.6f]", max(marg12), gm))
+ok(min(cond12) == 0 && max(cond12) <= gc && gc - max(cond12) < 5e-4,
+   sprintf("joint information (both strata): Gamma in [0, %.4f] on the grid; closed form [0, b log 1.25 / .6] = [0, %.6f]", max(cond12), gc))
+r_pool <- exp(log(0.5) + lsup(dlapb(ys - 0.3) - dlapb(ys))); r_hi <- exp(log(0.8) + lsup(dlapb(ys - 0.3) - dlapb(ys)))
+ok(abs(r_pool - 0.5 * exp(0.3 / b12)) < 1e-9 && round(r_pool, 6) == 0.764233 && r_pool <= 1,
+   sprintf("Gamma = .5 (shift -.3): pooled constraint p exp(.3/b) = %.6f <= 1", r_pool))
+ok(round(r_hi, 6) == 1.222772 && r_hi > 1,
+   sprintf("Gamma = .5: stratum X = 1 requires .8 exp(.3/b) = %.6f <= 1, which fails", r_hi))
+att_hi <- min(exp(dlapb(ys)) - 0.8 * exp(dlapb(ys - 0.3)))           # implied attriter mass in stratum X = 1, times .2
+ok(att_hi < 0, sprintf("so no completion keeps F(. | X = 1): the implied attriter density there has a negative part (min %.4f)", att_hi / 0.2))
 cat("\nall checks passed\n")

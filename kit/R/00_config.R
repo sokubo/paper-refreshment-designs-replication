@@ -20,6 +20,36 @@ DERIVED_DIR <- file.path(DATA_DIR, "derived_me")   # person-level derived files:
 PROJECT_DIR <- .need_env("P1_PROJECT_DIR")
 RESULTS_DIR <- path.expand(Sys.getenv("P1_RESULTS_DIR", file.path(PROJECT_DIR, "results")))
 
+## --- the licensed input: one explicitly named file for every script ------------------------------------
+## P1_INPUT_DTA names the integrated master file (a path, or a file name inside RAW_DIR). If it is unset, the
+## single master .dta in RAW_DIR is used (files whose names contain "online" are the 2020 web supplement and are
+## ignored); the run stops if there is more than one candidate instead of choosing by a naming heuristic.
+input_dta <- function() {
+  f <- Sys.getenv("P1_INPUT_DTA", "")
+  if (nzchar(f)) {
+    if (!file.exists(f)) f <- file.path(RAW_DIR, f)
+    if (!file.exists(f)) stop("P1_INPUT_DTA does not name an existing file: ", Sys.getenv("P1_INPUT_DTA"), call. = FALSE)
+    return(normalizePath(f))
+  }
+  f_all <- list.files(RAW_DIR, pattern = "\\.dta$", full.names = TRUE)
+  f_all <- f_all[!grepl("online", basename(f_all), ignore.case = TRUE)]
+  if (length(f_all) != 1)
+    stop(sprintf("RAW_DIR holds %d candidate master .dta files (%s); set P1_INPUT_DTA to the one to analyse",
+                 length(f_all), paste(basename(f_all), collapse = ", ")), call. = FALSE)
+  normalizePath(f_all)
+}
+## fingerprint of the input file: size, MD5 (base R) and SHA-256 when a system tool is available
+input_fingerprint <- function(f) {
+  sha <- tryCatch({
+    out <- suppressWarnings(system2("shasum", c("-a", "256", shQuote(f)), stdout = TRUE, stderr = FALSE))
+    if (!length(out)) out <- suppressWarnings(system2("sha256sum", shQuote(f), stdout = TRUE, stderr = FALSE))
+    if (length(out)) sub("\\s.*$", "", out[1]) else NA_character_
+  }, error = function(e) NA_character_)
+  list(file = basename(f), bytes = file.size(f), md5 = unname(tools::md5sum(f)), sha256 = sha)
+}
+## respondent identifier column of the master file, if present (used only to verify alignment across scripts)
+ID_COLS <- c("PanelID", "PANELID", "ID", "CASEID")
+
 MIN_CELL  <- 10          # 秘匿閾値(N<10セルは抑制)
 # 尺度に付随する「該当者なし」コードを非該当として扱う項目別上書き(04 と 15 で共有; 2026-09-16)
 #   満足度 DQ18A-E の 6(仕事/結婚/友人/親/子がいない)、DQ04_1C の 5(部下はいない)、DQ04_2 の 5(上司・同僚はいない)。

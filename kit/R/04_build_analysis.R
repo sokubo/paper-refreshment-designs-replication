@@ -48,8 +48,8 @@ if (!exists("NAP_OVERRIDE")) NAP_OVERRIDE <- list(DQ18A = 6, DQ18B = 6, DQ18C = 
 
 main <- function() {
   # 2020ウェブ特別調査ファイル(JLPSYM_online_*)が同居してもマスタを確実に選ぶ
-  f_all <- list.files(RAW_DIR, pattern = "\\.dta$", full.names = TRUE)
-  f <- f_all[!grepl("online", basename(f_all), ignore.case = TRUE)][1]
+  f <- input_dta(); fp <- input_fingerprint(f)
+  cat(sprintf("input: %s (%s bytes; md5 %s; sha256 %s)\n", fp$file, fp$bytes, fp$md5, fp$sha256))
   d <- as.data.table(read_dta(f))
   getcol <- function(nm, required = TRUE) {
     hit <- names(d)[toupper(trimws(names(d))) == toupper(nm)]
@@ -219,9 +219,12 @@ main <- function() {
                   "04_summary.csv", exempt = "value")
 
   ## --- (5) 派生保存(ローカルのみ) --------------------------------------------
+  idc <- names(d)[toupper(names(d)) %in% toupper(ID_COLS)]
+  src <- list(input = fp, rows = as.integer(keep), cn = as.integer(cn[keep]),
+              id = if (length(idc)) as.character(zap_labels(d[[idc[1]]]))[keep] else NULL)
   saveRDS(list(T = Tt, w = w, e = e, X = as.matrix(X), Y = Ymat, M = Mmat,
                DK = DKmat, REF = REFmat, person_dq = person_dq,
-               meta = meta[in_universe == TRUE]),
+               meta = meta[in_universe == TRUE], src = src),
           file.path(DERIVED_DIR, "analysis_w5.rds"))
   cat("saved:", file.path(DERIVED_DIR, "analysis_w5.rds"), "\n")
   cat("\n== 04 完了。共有してほしいもの ==\n")
