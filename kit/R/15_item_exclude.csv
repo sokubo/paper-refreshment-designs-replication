@@ -1,0 +1,9 @@
+var,reason
+DQ03_2,nominal (occupation major group; mean contrast meaningless)
+DQ44_2,nominal (spouse occupation major group)
+DQ48_1A,nominal (calendar era code of spouse birth year; paradata)
+DQ57A,nominal (answer-format code for wake time; 1=time given/2=not fixed)
+DQ57B,nominal (answer-format code for leave-home time)
+DQ57C,nominal (answer-format code for return-home time)
+DQ57D,nominal (answer-format code for bed time)
+DQ35B,nominal (household income source of spouse; 15=no spouse)

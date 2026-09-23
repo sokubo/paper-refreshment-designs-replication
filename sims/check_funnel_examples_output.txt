@@ -1,0 +1,54 @@
+(1) f2 = N(0,1), Q = N(-1,1), p = .5
+  ok    only h' = -1 is feasible on the grid: identified set {-1}
+(2) Gaussian-logistic, alpha = -1, beta = 1, sigma^2 = 1
+  ok    retention 0.3033
+  ok    Delta = 1 = beta sigma^2 feasible; 1.05 and -0.02 not (lower- and upper-tail violations visible on |y| <= 40)
+  ok    interior supremum at Delta = 1 equals e^{-1/2}
+(3) outcome-independent attrition, f2 = Q = N(0,1)
+  ok    p = 0.3: h' = +-0.060 infeasible on |y| <= 40 (the ratio is exp{-h' y - h'^2/2}, unbounded)
+  ok    p = 0.5: h' = +-0.035 infeasible on |y| <= 40 (the ratio is exp{-h' y - h'^2/2}, unbounded)
+  ok    p = 0.9: h' = +-0.005 infeasible on |y| <= 40 (the ratio is exp{-h' y - h'^2/2}, unbounded)
+(4) Laplace, logistic and Cauchy
+   p = 0.3: Laplace 1.20, logistic 1.20 (theory log(1/p) = 1.20) | Cauchy 1.27 (theory (1-p)/sqrt(p) = 1.28)
+  ok    p = 0.3 half-widths agree with the closed forms
+   p = 0.5: Laplace 0.69, logistic 0.69 (theory log(1/p) = 0.69) | Cauchy 0.70 (theory (1-p)/sqrt(p) = 0.71)
+  ok    p = 0.5 half-widths agree with the closed forms
+   p = 0.8: Laplace 0.22, logistic 0.22 (theory log(1/p) = 0.22) | Cauchy 0.22 (theory (1-p)/sqrt(p) = 0.22)
+  ok    p = 0.8 half-widths agree with the closed forms
+  ok    logistic: log R(0.3) = 0.3 (1-Lipschitz log density with tail slopes -+1)
+  ok    logistic: log R(1.0) = 1.0 (1-Lipschitz log density with tail slopes -+1)
+  ok    logistic: log R(2.0) = 2.0 (1-Lipschitz log density with tail slopes -+1)
+(5) central binding: f2 = N(0,1), Q = N(0, s^2), p = s
+  ok    s = 0.5: implied selection exp{-(s^-2-1)y^2/2} is admissible, sup = 1 at y = 0
+  ok    s = 0.5, h' = 0.01: log sup ratio 0.000066 = h'^2/(2(1-s^2)) > 0: infeasible
+  ok    s = 0.5, h' = 0.10: log sup ratio 0.006666 = h'^2/(2(1-s^2)) > 0: infeasible
+  ok    s = 0.5, h' = 1.00: log sup ratio 0.666666 = h'^2/(2(1-s^2)) > 0: infeasible
+  ok    s = 0.8: implied selection exp{-(s^-2-1)y^2/2} is admissible, sup = 1 at y = 0
+  ok    s = 0.8, h' = 0.01: log sup ratio 0.000139 = h'^2/(2(1-s^2)) > 0: infeasible
+  ok    s = 0.8, h' = 0.10: log sup ratio 0.013889 = h'^2/(2(1-s^2)) > 0: infeasible
+  ok    s = 0.8, h' = 1.00: log sup ratio 1.388889 = h'^2/(2(1-s^2)) > 0: infeasible
+   -> identified set {0} although selection decays in both tails and Q has strictly lighter tails than F2
+(6) modulated Cauchy and logistic densities (p = .5)
+   Cauchy tails: log R(.1) = 0.2666, log R(.05) >= 3.9677 (at y = .05), log 2 = 0.6931
+  ok    Cauchy: .1 feasible, .05 infeasible -> disconnected identified set
+   logistic tails: log R(.1) = 0.2065, log R(.05) >= 3.9732 (at y = .05), log 2 = 0.6931
+  ok    logistic: .1 feasible, .05 infeasible -> disconnected identified set
+  ok    modulated logistic: log R(eps) >= |eps| (exponential-tail outer bound holds)
+  ok    modulated logistic: log R(1) != 1 (the closed form e^|eps| needs the Lipschitz condition)
+   modulated Cauchy, feasible shifts in [0, .2] (p = .5): 0.0000 0.0025 0.0050 0.0950 0.0975 0.1000 0.1025 0.1050 0.1975 0.2000 
+(7) Lipschitz neighbourhood
+  ok    modulated Cauchy: log f is 125.55-Lipschitz; every |eps| <= log(2)/L = 0.0055 is feasible at p = .5
+(8) discrete maps (Corollary 4)
+  ok    F2 uniform on {0,1,2}, p = 1/3, Q = point mass at 0: the identity is feasible, its image {0,1,2} strictly contains the reported {0}
+  ok    F2 = (.5,.5), Q = (1,0), p = .5: identity feasible with an unreported category
+  ok    F2 uniform, p = 1, Q = (2/3, 0, 1/3): the unique feasible map is (0,0,2), a non-identity map
+(9) repeated tenures with a general map (Corollary 5)
+  ok    F = Q = N(0,1), p = .1: c'(y) = 2y satisfies the constraint (p x max ratio = 0.2000)
+  ok    F = Q = N(1,1), p = .1: c'(y) = 2y satisfies the constraint (p x max ratio = 0.2363)
+   implied selection differentials of c'(y) = 2y: 0 and -1/2 (mean mu/2 against mu); the true identity has 0 and 0
+(10) covariate predicting retention only (Proposition 1)
+  ok    pooled p = .5: half-width log 2; strata p = .8, .2: intersection half-width log 1.25
+(11) bounded common loading (Theorem 4(a))
+  ok    joint feasible loading set {0}: tau_1 = C1 - Gamma N1 = 0, not the separate outer bound [-log 2, 0]
+
+all checks passed

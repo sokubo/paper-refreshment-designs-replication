@@ -1,0 +1,40 @@
+(A) pattern probabilities:
+  1000   1100   1010   1110   1001   1101   1011   1111 
+0.3133 0.1326 0.1276 0.0714 0.1392 0.0820 0.0761 0.0579 
+    response rate at wave 4: p_4 = 0.3552
+
+(A) candidates h'_4 = h_4 + eps (with h'_2 = h_2 + 1 and h'_3 = h_3 - 1 as arbitrary intermediate maps):
+  eps feasible     min_L4 max_obs_diff   F1_diff   F4_diff kernel_ok mean_shift  nc_shift
+1  -3    FALSE -1.168e-01           NA        NA        NA        NA         NA        NA
+2  -2    FALSE -9.511e-02           NA        NA        NA        NA         NA        NA
+3  -1    FALSE -4.902e-02           NA        NA        NA        NA         NA        NA
+4   0     TRUE  5.487e-06    6.939e-18 1.388e-17 2.776e-17      TRUE          0 1.110e-16
+5   1     TRUE  0.000e+00    6.939e-18 1.388e-17 1.388e-17      TRUE         -1 1.665e-16
+6   2    FALSE -1.004e-02           NA        NA        NA        NA         NA        NA
+7   3    FALSE -6.766e-02           NA        NA        NA        NA         NA        NA
+    feasible eps: every observed pattern measure, F_1 (with W) and F_4 are reproduced to machine precision, the kernel is valid,
+    the survivors' latent mean moves by exactly -eps and the negative-control contrast by 0;
+    infeasible eps: the leftover L_4 has a negative entry, i.e. the wave-4 domination inequality fails.
+
+(A') monotone-attrition special case:
+    eps = +1 feasible (p_4 = 0.1296); N_1 >= ... >= N_4: TRUE; pi'_j in [0,1]: TRUE; prod_{u<j} pi'_u F' = N_j: TRUE; max obs diff = 1.39e-17
+
+(B) Corollary 4, m = 4 categories: mass-domination criterion vs LP feasibility for all weakly increasing maps
+    number of weakly increasing maps: 35 (= choose(2m-1, m) = 35)
+    random trial 1: p = 0.33; criterion == LP for all 35 maps: TRUE; feasible maps: 1; identity feasible: TRUE
+    random trial 2: p = 0.55; criterion == LP for all 35 maps: TRUE; feasible maps: 0; identity feasible: FALSE
+    random trial 3: p = 0.44; criterion == LP for all 35 maps: TRUE; feasible maps: 0; identity feasible: FALSE
+    random trial 4: p = 0.50; criterion == LP for all 35 maps: TRUE; feasible maps: 1; identity feasible: TRUE
+    random trial 5: p = 0.29; criterion == LP for all 35 maps: TRUE; feasible maps: 0; identity feasible: FALSE
+    all categories reported, p = .8 (p*Q <= F2 everywhere): feasible maps = 1 (identity only)
+    same with p = .9 (p*Q(1) = .27 > .25): feasible maps = 0 (the deterministic model is rejected)
+    stayers never report category 4 (Q = .3,.3,.4,0), p = 0.7: feasible maps: 1233
+    stayers never report category 4 (Q = .3,.3,.4,0), p = 0.6: feasible maps: 1123 1223 1233 1234
+    (a map is written as the images of categories 1..4; 1233 merges category 4 into 3; the identity is 1234)
+
+(C) Corollary 6, Gaussian F_2 (sd 1): width of the unrestricted-map interval, 2*phi(Phi^{-1}(p))/p
+    p = 0.9: formula width 0.3900; numeric integration 0.3900; LP maximum on the grid 0.1950 vs m_U = 0.1950
+    p = 0.8: formula width 0.6999; numeric integration 0.6999; LP maximum on the grid 0.3499 vs m_U = 0.3500
+    p = 0.6: formula width 1.2878; numeric integration 1.2878; LP maximum on the grid 0.6439 vs m_U = 0.6439
+    p = 0.5: formula width 1.5958; numeric integration 1.5958; LP maximum on the grid 0.7979 vs m_U = 0.7979
+    -> at p = .8 the unrestricted-map interval has width .70 sd; in Simulation 1 the population location-shift identified sets at p = .8 have width 0 to .26, and the relaxed plug-in sets .25 to .32.

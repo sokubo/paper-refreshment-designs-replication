@@ -1,0 +1,3 @@
+w5_var,w1_var,recode_w1,note
+DQ43,ZQ50,reverse12,w1 ZQ50 is coded 1=never married/2=married (reversed relative to w2+); recode to w5 coding
+DQ39,ZQ44,map:10=8;11=8,w1 ZQ44 has extra codes 10=group home and 11=community hall; fold into 8=other to match w5 DQ39 (8 categories)

@@ -1,0 +1,12 @@
+% T2 extra preamble — additions to Quarto's pdf template.
+% Matches the house arXiv format (see the reference paper.tex supplied 2026-09-16):
+% 12pt letterpaper article, 1in margins, \setstretch{1.5} body, title/author \thanks.
+\usepackage{amsthm}
+\ifPDFTeX
+  \DeclareUnicodeCharacter{2212}{\ensuremath{-}}   % minus
+  \DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+  \DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}}
+  \DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}}
+  \DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+  \DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\fi
