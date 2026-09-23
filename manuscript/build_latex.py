@@ -18,7 +18,7 @@ LTX  = os.path.join(HERE, 'latex')
 # --- the two footnotes on the title page -------------------------------------
 ARCHIVE_REPO = 'https://github.com/sokubo/paper-refreshment-designs-replication'
 ARCHIVE_TAG = 'paper-v0.6'
-ARCHIVE_COMMIT = 'COMMIT7'          # filled in after the release check of the published snapshot
+ARCHIVE_COMMIT = 'fe0f75c'          # filled in after the release check of the published snapshot
 TITLE_THANKS = (
     r"\thanks{Code for every simulation and deterministic check in this paper is in the replication "
     r"archive at \url{%s} (fixed version: tag \texttt{%s}, commit \texttt{%s}). The empirical "
