@@ -21,9 +21,13 @@ LTX  = os.path.join(HERE, 'latex')
 # --- the two footnotes on the title page -------------------------------------
 ARCHIVE_REPO = 'https://github.com/sokubo/paper-refreshment-designs-replication'
 ARCHIVE_TAG = 'paper-v0.7'
-ARCHIVE_COMMIT = 'COMMIT7'          # filled in after the release check of the published snapshot
+ARCHIVE_COMMIT = '7480833'          # checked computational commit (release check of the published snapshot, 2026-09-24)
 TITLE_THANKS = (
-    r"\thanks{Code for every simulation and deterministic check in this paper is in the replication "
+    r"\thanks{This research benefited from discussions and feedback during presentations at "
+    r"the Institute of Social Science, University of Tokyo, the Japanese Association for Mathematical "
+    r"Sociology, and the panel survey conference at Keio University, and from comments by Hiroshi Ishida, "
+    r"Kazuo Yamaguchi, and Hiroki Takikawa. "
+    r"Code for every simulation and deterministic check in this paper is in the replication "
     r"archive at \url{%s} (fixed version: tag \texttt{%s}, commit \texttt{%s}). The empirical "
     r"illustration uses licensed JLPS microdata, which are not redistributed; the archive contains the "
     r"code that produces the reported aggregates and a synthetic example (see Data and code availability). "
@@ -69,19 +73,40 @@ if not m:
     sys.exit('no \\author in generated tex')
 tex = tex[:m.end()-1] + AUTHOR_THANKS + tex[m.end()-1:]
 
-# keep the two long tables (Table 2, strides; Table 3, simulation 3) from splitting into a stub at a page foot
-NEEDSPACE = {'Schedule (entry waves)': r'0.45\textheight', 'Regime (': r'0.4\textheight'}
-def _needspace(tex):
-    out, pos = [], 0
-    for m in re.finditer(r'\\begin\{longtable\}', tex):
-        head = tex[m.start():m.start() + 3000]
-        for key, h in NEEDSPACE.items():
-            if key in head:
-                out.append(tex[pos:m.start()]); out.append('\\needspace{%s}\n' % h); pos = m.start(); break
-    out.append(tex[pos:])
-    return ''.join(out)
-tex = _needspace(tex)
-print('needspace inserted before %d table(s)' % tex.count('\\needspace{'))
+# keep the two long tables (strides; simulation 3) on one page: Pandoc writes every table as a longtable,
+# which may break across pages and leave a stub at a page foot. These two are rewritten as ordinary table
+# floats (same column specification, caption and rows), so LaTeX places each whole where it fits and the text
+# flows around it. (A \needspace guard before the longtable proved unreliable: it could force a page break
+# that left most of a page empty.)
+FLOAT_TABLES = ('tbl-strides', 'tbl-sim3')
+def _brace_end(s, i):
+    """index just past the group that opens at s[i] == '{'"""
+    depth = 0
+    for j in range(i, len(s)):
+        if s[j] == '{': depth += 1
+        elif s[j] == '}':
+            depth -= 1
+            if depth == 0: return j + 1
+    raise ValueError('unbalanced braces')
+def _float_table(tex, label):
+    lab = tex.find('\\label{%s}' % label)
+    if lab < 0: sys.exit('table %s not found in the tex' % label)
+    b = tex.rfind('\\begin{longtable}', 0, lab)
+    e = tex.find('\\end{longtable}', lab)
+    blk = tex[b:e]
+    spec_open = blk.index('{', len('\\begin{longtable}[]'))
+    spec = blk[spec_open + 1:_brace_end(blk, spec_open) - 1]
+    c = blk.index('\\caption{'); cap_end = _brace_end(blk, c + len('\\caption'))
+    caption = blk[c:cap_end]
+    head = blk[blk.index('\\tabularnewline', cap_end) + len('\\tabularnewline'):blk.index('\\endfirsthead')]
+    rows = blk[blk.index('\\endlastfoot') + len('\\endlastfoot'):]
+    new = ('\\begin{table}[htbp]\n' + caption + '\\label{%s}\n' % label +
+           '\\begin{tabular}{' + spec + '}' + head.rstrip() + '\n' + rows.strip() + '\n\\bottomrule\\noalign{}\n'
+           '\\end{tabular}\n\\end{table}')
+    return tex[:b] + new + tex[e + len('\\end{longtable}'):]
+for _lab in FLOAT_TABLES:
+    tex = _float_table(tex, _lab)
+print('long tables set as floats:', sum(('\\label{%s}\n\\begin{tabular}' % l) in tex for l in FLOAT_TABLES))
 
 # visible Keywords line after the abstract (house format)
 if r'\textbf{Keywords:}' not in tex:
