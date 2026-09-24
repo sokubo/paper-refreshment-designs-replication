@@ -1,11 +1,12 @@
-time: 2026-09-24 01:19:16
+time: 2026-09-24 12:26:20
 input: SYNTH_ZQ100AQ100BQ100CQ100DQ100EQ100FQ100GQ100HQ100IQ100.dta
 input size: 6500876
-input mtime: 2026-09-24 00:35:05
+input mtime: 2026-09-24 05:12:21
 input md5: 4462c278ca2ed297ff47b2c23e31e80d
 input sha256: 760b722ad0728a80773003ff3b0cda6debf6bf1b497d3a1a78600cc493f75289
-derived: /tmp/p1synth/derived_me/analysis_w5.rds 2026-09-24 00:35:08
+derived: /tmp/p1synth/derived_me/analysis_w5.rds 2026-09-24 12:25:40
 varmap: /tmp/p1synth/varmap_synthetic.csv
+style items: style_items_synthetic.csv md5: 24c653a7d506659786b3a51d1c182fbe
 B: 50 seed: 20260915 dose: exact,any
 panelcond: 0.1.4
 

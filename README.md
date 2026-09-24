@@ -18,8 +18,8 @@ Preprint: arXiv:XXXX.XXXXX (to be filled at posting). Author: Shoki Okubo (Toyo 
 release-check records (`RELEASE_CHECK*`), which are written after the manifest.
 
 ## Checked commit and release record
-Computational commit checked against the numerical results of the manuscript: `7480833a7292c2c613663e32e2aa846c5014f131` — see `RELEASE_CHECK.md`, `RELEASE_CHECK_run.log` (the console output of the clean-copy run) and `RELEASE_CHECK_sessionInfo.txt`. Later commits change only the manuscript (its source, PDF and any figure script under `manuscript/`), documentation and the release record — `git diff --stat 7480833a7292c2c613663e32e2aa846c5014f131 HEAD` lists them — so the computational scripts and outputs are those of the checked commit; after any change to them the release check is rerun and this line is regenerated.
-Tag of the checked release: `paper-v0.7`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
+Computational commit checked against the numerical results of the manuscript: not yet checked for this version. The `RELEASE_CHECK*` files in this snapshot are the record of the previously checked commit `7480833a7292c2c613663e32e2aa846c5014f131`, whose scripts or outputs differ from these; the release check is rerun on this version before it is tagged, and this line is then regenerated.
+Tag of the checked release: `paper-v0.8`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
 Third-party reproduction: none. The release record is the author's own re-execution of the published snapshot in a clean copy.
 
 ## Data
@@ -58,7 +58,7 @@ Run the `sims/` steps from `sims/`.
 | 7 | `sims/check_manuscript_values.R --selftest` | console | seconds | every simulation and design-rank value quoted in the manuscript |
 | 8 | `manuscript/figures/make_fig1_funnel.py` | `fig1_funnel.png/pdf` | seconds | Figure 1 |
 | 9 | `kit/R/15_make_synthetic.R` | `$P1_DATA_DIR/raw/*.dta`, byte-identical to `kit/synthetic/*.dta` | ~1 s | the public stand-in for the restricted input |
-| 10 | `kit/R/15_test_mass_ratio.R`, then `kit/R/04_build_analysis.R` + `kit/R/15_panelcond_designs.R --B 50` + `kit/R/15b_item_flags.R` | console (27 checks); `$P1_RESULTS_DIR/*`, identical to `kit/synthetic_out/*` apart from `15_env.txt` | ~30 s | the unit test of the mass-domination computation (positive/zero, sparse and zero/zero categories; the missing-mass allocation for fresh item nonresponse, including the population counterexample); the Section 10 pipeline of the 2011 episode, run on synthetic data, including the routing-threshold sensitivity (`15_routing_sensitivity.csv`) |
+| 10 | `kit/R/15_test_mass_ratio.R`, then `kit/R/04_build_analysis.R` + `kit/R/15_panelcond_designs.R --B 50` + `kit/R/15b_item_flags.R` | console (27 checks); `$P1_RESULTS_DIR/*`, identical to `kit/synthetic_out/*` apart from `15_env.txt` | ~30 s | the unit test of the mass-domination computation (positive/zero, sparse and zero/zero categories; the missing-mass allocation for fresh item nonresponse, including the population counterexample); the Section 10 pipeline of the 2011 episode, run on synthetic data, including the routing-threshold sensitivity (`15_routing_sensitivity.csv`), the verification of the response-style item list (`15_style_items_audit.csv`) and the item-set sensitivity of the response-style composites (`15_style_sensitivity.csv`) |
 | 11 | `kit/check_manuscript_values_T2.R <results dir> --selftest` | console | seconds | every number quoted in Section 10, reprinted from the aggregate outputs after checking that all of them come from one input file; then the checker's self-test |
 
 Steps 1–8 are self-contained and use no data; steps 9–10 are run from `kit/` with the environment

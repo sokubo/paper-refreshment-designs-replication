@@ -22,7 +22,8 @@ INPUT <- list(file   = "ZQ115AQ212BQ116CQ111DQ211EQ115FQ108GQ112HQ112IQ107JQ109K
               sha256 = "d7fea333353e78bacde801045ae433ee3f24ae8d6b3e5af48d5720fec55306c5")
 
 REQUIRED <- c("15_arms.csv", "15_detection_counts.csv", "15_diagnostics_summary.csv", "15_designs_items.csv",
-              "15_mass_diagnostic_summary.csv", "15_mass_diagnostic_flags.csv", "15_tests_items.csv", "15_routing_sensitivity.csv", "15_env.txt", "04_item_meta.csv",
+              "15_mass_diagnostic_summary.csv", "15_mass_diagnostic_flags.csv", "15_tests_items.csv", "15_routing_sensitivity.csv",
+              "15_style_sensitivity.csv", "15_style_items_audit.csv", "15_env.txt", "04_item_meta.csv",
               "11_negcontrol_w13_summary.csv", "11_negcontrol_w13.csv", "11_env.txt",
               "11b_negcontrol_w13_pooled.csv", "11b_negcontrol_w13_corr.csv", "11b_loading_grid.csv", "11b_env.txt")
 
@@ -139,13 +140,42 @@ run_checks <- function(RES, verbose = TRUE) {
   chk("item-nonresponse rejections from the grids DQ58C, DQ04(3), DQ09, DQ08D / all", c(sum(grepl("^(DQ58C_|DQ04_3|DQ09_|DQ08D_)", rj)), length(rj)), DIAG$grid4)
   chk("T_SD rejections, item nonresponse (share)", one(dg[family == "B_itemnonresp"], "diagnostics B")$share_T2_p05, DIAG$share_nr, 5e-4)
 
-  ## --- response-style margins -------------------------------------------------
+  ## --- response-style margins (prespecified rating-scale items; common battery at both waves) -------------
   st <- it[family == "P_style"]
   ext <- st[grepl("ext_share", var), d_std]; mid <- st[grepl("mid_share", var), d_std]
   chk("extreme-category use: five designs", length(ext), 5)
   chk("midpoint use: five designs", length(mid), 5)
-  chk("extreme-category use, range over the five designs", round(range(ext), 2), c(-0.25, -0.21))
-  chk("midpoint use, range over the five designs",        round(range(mid), 2), c(0.19, 0.21))
+  chk("extreme-category use, range over the five designs", round(range(ext), 2), STYLE$ext_range)
+  chk("midpoint use, range over the five designs",        round(range(mid), 2), STYLE$mid_range)
+  au <- rd("15_style_items_audit.csv"); uniq(au, "var", "15_style_items_audit")
+  chk("rating-scale items on the list / verified at the comparison wave / in the common battery",
+      c(au[set == "rating", .N], au[set == "rating" & codes_verified %in% TRUE, .N], au[in_main %in% TRUE, .N]), STYLE$n_rating)
+  chk("items of the common battery with a neutral midpoint", au[in_main_midpoint %in% TRUE, .N], STYLE$n_mid)
+  chk("rating items with a verified neutral midpoint (all, same-wave designs)", au[set == "rating" & midpoint_verified %in% TRUE, .N], STYLE$n_mid_all)
+  chk("no item outside the rating set, and no unverified item, enters the main composites", au[in_main %in% TRUE & !(set == "rating" & codes_verified %in% TRUE & entry_wave_ok %in% TRUE), .N], 0)
+  chk("items the v0.7 rule admitted that are not rating scales (incl. marital status)",
+      c(au[in_v07_rule %in% TRUE & !(set == "rating" & codes_verified %in% TRUE), .N], as.numeric("DQ43" %in% toupper(au[in_v07_rule %in% TRUE & set != "rating", var]))), STYLE$n_v07_extra)
+  ss <- rd("15_style_sensitivity.csv")[dose_def == "exact"]; uniq(ss, c("battery", "indicator", "estimator"), "15_style_sensitivity (exact)")
+  sv <- function(b, i) { r <- ss[battery == b & indicator == i][order(match(estimator, c("naive", "sm", "ssm", "ec", "ec_adj")))]; r$d_std }
+  chk("v0.7 rule as run (all 4-7-code items): extreme use, five designs (regression to v0.7)", round(sv("v07_asrun", "ext"), 4), STYLE$v07_ext)
+  chk("v0.7 rule as run: midpoint use, five designs (regression to v0.7)", round(sv("v07_asrun", "mid"), 4), STYLE$v07_mid)
+  chk("main rows of the sensitivity file equal the item file", c(round(sv("rating_common (main)", "ext"), 4), round(sv("rating_common (main)", "mid"), 4)),
+      round(c(st[grepl("ext_share", var)][order(match(estimator, c("naive", "sm", "ssm", "ec", "ec_adj"))), d_std], st[grepl("mid_share", var)][order(match(estimator, c("naive", "sm", "ssm", "ec", "ec_adj"))), d_std]), 4))
+  chk("all rating items (same-wave designs): extreme use, range", round(range(sv("rating_all", "ext")), 2), STYLE$all_ext_range)
+  chk("all rating items (same-wave designs): midpoint use, range", round(range(sv("rating_all", "mid")), 2), STYLE$all_mid_range)
+  chk("rating and frequency scales, common battery: extreme use, range", round(range(sv("ratingfreq_common", "ext")), 2), STYLE$rf_ext_range)
+  chk("bipolar five-point scales only, common battery: extreme use, range", round(range(sv("bipolar_common", "ext")), 2), STYLE$bip_ext_range)
+  chk("bipolar five-point scales only, common battery: midpoint use, range", round(range(sv("bipolar_common", "mid")), 2), STYLE$bip_mid_range)
+  chk("agreement items asked of everyone, common battery: number of items", unique(ss[battery == "agree_common" & indicator == "ext", n_items_w5]), STYLE$n_agree)
+  chk("agreement items asked of everyone: extreme use, range", round(range(sv("agree_common", "ext")), 2), STYLE$agree_ext_range)
+  chk("agreement items asked of everyone: midpoint use, range", round(range(sv("agree_common", "mid")), 2), STYLE$agree_mid_range)
+  chk("every item set: extreme use falls and midpoint use rises in all five designs (exact and any dose)",
+      c(rd("15_style_sensitivity.csv")[indicator == "ext", as.numeric(all(d_std < 0))], rd("15_style_sensitivity.csv")[indicator == "mid", as.numeric(all(d_std > 0))]), c(1, 1))
+  nf <- function(b) unique(ss[battery == b & indicator == "ext", n_items_w5])
+  chk("frequency scales with an entry-wave counterpart added to the common battery", nf("ratingfreq_common") - nf("rating_common"), STYLE$n_freq_added)
+  chk("frequency scales added: midpoint use unchanged (no neutral middle)", as.numeric(isTRUE(all.equal(sv("ratingfreq_common", "mid"), sv("rating_common", "mid")))), 1)
+  chk("v0.7 rule as run: extreme use, range", round(range(sv("v07_asrun", "ext")), 2), STYLE$v07_ext_range)
+  chk("v0.7 rule as run: midpoint use, range", round(range(sv("v07_asrun", "mid")), 2), STYLE$v07_mid_range)
 
   ## --- the employment item ----------------------------------------------------
   emp <- A[var == "DQ02"]
@@ -272,6 +302,14 @@ COUNTS <- list(n_naive = 402, n_matched = c(401, 401), flagged = c(22, 16, 9, 20
                common = c(15, 12, 6, 20, 19), n_all5 = 2, all5_items = "DQ26, DQ44_4A", all5_items_semicolon = "DQ26; DQ44_4A")
 DIAG <- list(ns = c(30, 227), sd = c(36, 401), sd_nr = c(66, 396), share_nr = 0.167, grid4 = c(50, 66))   # rejections and denominators (frozen rerun)
 SENS <- list(t10 = c(32, 22, 16, 9, 20, 19, 2), t20 = c(32, 22, 16, 9, 20, 19, 2), none = c(0, 23, 16, 10, 20, 19, 2))   # routing-threshold sensitivity (frozen rerun)
+## response-style composites (rerun of 2026-09-24 with the prespecified item list): ranges of d_std over the five designs;
+## the "v07" values are the composites of the v0.7 rule, reproduced by the new code for the record (they equal the v0.7 item file)
+STYLE <- list(ext_range = c(-0.32, -0.23), mid_range = c(0.19, 0.21), n_rating = c(46, 46, 41), n_mid = 25, n_mid_all = 28, n_freq_added = 24,
+              n_v07_extra = c(43, 1),
+              v07_ext = c(-0.2536, -0.2120, -0.2094, -0.2329, -0.2321), v07_mid = c(0.1868, 0.1993, 0.1994, 0.2081, 0.2056),
+              v07_ext_range = c(-0.25, -0.21), v07_mid_range = c(0.19, 0.21),
+              all_ext_range = c(-0.32, -0.23), all_mid_range = c(0.20, 0.23), rf_ext_range = c(-0.29, -0.22), bip_ext_range = c(-0.29, -0.21),
+              bip_mid_range = c(0.15, 0.17), n_agree = 17, agree_ext_range = c(-0.28, -0.20), agree_mid_range = c(0.15, 0.17))
 MASS <- list(max_finite_item = "dq44_2l", supported_items = c("DQ08B_4", "DQ45A"), eligible = 419, zero_denom_items = 14, zero_denom_categories = 16,
              not_reconcilable = c(1, 0, 1, 0), median_missing = 0.0177, named_feasible = c(1, 1, 1, 1),
              finite_gt1 = 13, max_finite = 2.256, supported_gt1 = 2, sparse_only_gt1 = 11, max_supported = 1.192,
@@ -301,6 +339,10 @@ if (SELFTEST) {
   expect_fail("a quoted value set to missing (15_arms.csv, n_old_S)", csv_edit("15_arms.csv", function(x) x[dose_def == "exact", n_old_S := NA]))
   expect_fail("the style margins of one design removed (15_designs_items.csv)",
               csv_edit("15_designs_items.csv", function(x) x[!(family == "P_style" & estimator == "ssm")]))
+  expect_fail("a nominal item marked as entering the main style composite (15_style_items_audit.csv)",
+              csv_edit("15_style_items_audit.csv", function(x) x[toupper(var) == "DQ43", in_main := TRUE]))
+  expect_fail("the v0.7-rule rows of the style sensitivity file altered (15_style_sensitivity.csv)",
+              csv_edit("15_style_sensitivity.csv", function(x) x[battery == "v07_asrun" & indicator == "ext" & estimator == "naive", d_std := d_std + 0.01]))
   expect_fail("another input named by 11_env.txt", function(d) {
     x <- readLines(file.path(d, "11_env.txt")); x <- sub("^input sha256: .*", paste("input sha256:", strrep("0", 64)), x)
     writeLines(x, file.path(d, "11_env.txt")) })

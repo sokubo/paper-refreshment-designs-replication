@@ -13,6 +13,8 @@ kit/R/15_make_synthetic_varmap.R
 kit/R/15_make_synthetic.R
 kit/R/15_mass_ratio.R
 kit/R/15_panelcond_designs.R
+kit/R/15_style_items.csv
+kit/R/15_style_items.R
 kit/R/15_test_mass_ratio.R
 kit/R/15b_item_flags.R
 kit/synthetic_out/04_balance.csv
@@ -28,8 +30,11 @@ kit/synthetic_out/15_item_flags.csv
 kit/synthetic_out/15_mass_diagnostic_flags.csv
 kit/synthetic_out/15_mass_diagnostic_summary.csv
 kit/synthetic_out/15_routing_sensitivity.csv
+kit/synthetic_out/15_style_items_audit.csv
+kit/synthetic_out/15_style_sensitivity.csv
 kit/synthetic_out/15_tests_items.csv
 kit/synthetic_out/15_validation.csv
+kit/synthetic/style_items_synthetic.csv
 kit/synthetic/SYNTH_ZQ100AQ100BQ100CQ100DQ100EQ100FQ100GQ100HQ100IQ100.dta
 LICENSE
 manuscript/build_latex.py

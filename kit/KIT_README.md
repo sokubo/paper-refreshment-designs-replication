@@ -33,6 +33,7 @@ export P1_DATA_DIR=<the directory holding the integrated .dta>
 export P1_PROJECT_DIR=<this archive's kit/ directory>
 export P1_INPUT_DTA=<file name of the integrated .dta inside $P1_DATA_DIR/raw>   # one named input
 Rscript R/15_test_mass_ratio.R         # unit test of the mass-domination helper (no data read)
+# R/15_style_items.csv lists the rating-scale items of the response-style composites (read by 04 and 15; see §3b)
 Rscript R/04_build_analysis.R          # derives the wave-5 risk set and the item universe
 Rscript R/15_panelcond_designs.R       # the five designs, the diagnostics, the mass-domination ratios
 Rscript R/15b_item_flags.R             # routing and hygiene flags for the item-nonresponse family
@@ -72,6 +73,7 @@ export P1_DATA_DIR=/tmp/p1synth P1_PROJECT_DIR=$PWD P1_RESULTS_DIR=/tmp/p1synth_
 Rscript R/15_make_synthetic.R            # regenerates synthetic/*.dta byte-identically
 Rscript R/15_make_synthetic_varmap.R     # the w1 <-> w5 variable map for the synthetic items
 export P1_VARMAP=$P1_DATA_DIR/varmap_synthetic.csv
+export P1_STYLE_ITEMS=$PWD/synthetic/style_items_synthetic.csv   # the synthetic items' entry in the style-item list (§3b)
 Rscript R/04_build_analysis.R
 Rscript R/15_panelcond_designs.R --B 50
 Rscript R/15b_item_flags.R
@@ -112,9 +114,9 @@ needs nothing from outside this archive.
 ## 3. Where each number in Section 10 comes from
 
 `check_manuscript_values_T2.R` performs every comparison below and prints the result. It requires all
-seventeen aggregate files and run records listed at its top (a missing file stops it), requires every key
+nineteen aggregate files and run records listed at its top (a missing file stops it), requires every key
 to identify exactly one row, and first checks that the run records of scripts 15, 11 and 11b name the
-same input file with the SHA-256 given in §5. On 24 September 2026 (JST) it reproduced all 105 quantities from the aggregate outputs of the frozen rerun, and its self-test detected all nine corruptions. One statement of Section 10 is a description rather than a number and is not asserted: that most positive/zero items are asked only of a subgroup (read from the item labels).
+same input file with the SHA-256 given in §5. On 24 September 2026 (JST) it reproduced all 128 quantities from the aggregate outputs of the frozen rerun, and its self-test detected all eleven corruptions. One statement of Section 10 is a description rather than a number and is not asserted: that most positive/zero items are asked only of a subgroup (read from the item labels).
 
 | Quantity in Section 10 | Output file | Column |
 |---|---|---|
@@ -129,7 +131,9 @@ same input file with the SHA-256 given in §5. On 24 September 2026 (JST) it rep
 | two items flagged by all five designs | `15_designs_items.csv` | intersection over `estimator` (DQ26, DQ44_4A) |
 | diagnostic rejections: 30 of 227 (13.2%) and 36 of 401 (9.0%) | `15_diagnostics_summary.csv` | `n_T1_reject`/`n_T1_tests`, `n_T2_reject`/`n_T2_tests`, `share_T1_p05`, `share_T2_p05`, family `A_substantive` |
 | 66 of 396 (16.7%) for item nonresponse; 50 of the 66 from the grids DQ58C, DQ04(3), DQ09 and DQ08D | `15_diagnostics_summary.csv`; `15_tests_items.csv` | `n_T2_reject`/`n_T2_tests`, `share_T2_p05`, family `B_itemnonresp`; `T2_p_boot < .05` by variable |
-| extreme-category fall of .21–.25; midpoint rise of .19–.21 | `15_designs_items.csv` | `d_std` for `pdq_ext_share`, `pdq_mid_share` |
+| response-style composites: the item set (rating-scale items on the list; verified codes; the common battery of items with the same codes at entry; the items with a neutral midpoint) and the items that the earlier rule admitted | `15_style_items_audit.csv` | `set`, `codes_verified`, `entry_wave_ok`, `in_main`, `in_main_midpoint`, `in_v07_rule`, `reason`; the codes and their labels as read from the file (§3b) |
+| extreme-category and midpoint margins over the five designs (common battery) | `15_designs_items.csv` | `d_std` for `pdq_ext_share`, `pdq_mid_share`, family `P_style` |
+| the same margins under other item sets: all rating items (same-wave designs), rating and frequency scales, the bipolar five-point scales only, and the rule used up to v0.7 (every item with four to seven consecutively numbered codes) as it was run and on the common battery | `15_style_sensitivity.csv` | `battery`, `indicator`, `estimator`, `n_items_w5`, `n_items_w1`, `d_std`; the `rating_common (main)` rows repeat the item-file values, and the `v07_asrun` rows reproduce the v0.7 item file |
 | employment: continuing respondents more often employed by 4.9 points, flagged by the entry-wave correction (q = .02) and survival matching (q = .05), not standardised (q = .15) or naive (q = .38) | `15_designs_items.csv`; `04_item_meta.csv` | `DQ02`, `estimate`, `q` and `class3` for `naive`, `sm`, `ec`, `ec_adj` (BH families: the items that enter the counts, per estimator). `DQ02` keeps its raw codes, 1 = working and 2 = not working, so the estimate −.049 is a lower not-working share among continuing respondents; the checker confirms the coding from the reach rate of the follow-up `DQ02_1`, which only those not working are asked |
 | mass-domination diagnostic: items with two to nine observed categories; items and categories with a positive/zero category; finite exceedances; exceedances in categories with at least ten fresh entrants; exceedances only in sparser categories; the two maxima | `15_mass_diagnostic_summary.csv` | `n_items_eligible`, `n_zero_denom_items`, `n_zero_denom_categories`, `n_finite_gt1`, `n_supported_gt1`, `n_sparse_only_gt1`, `max_finite_ratio`, `max_supported_ratio` (exact dose) |
 | fresh item nonresponse: 25 of the 26 flags are reconcilable by the fresh missing mass (the exception is `DQ57DZ`, the minute of bedtime, a positive/zero item with no missing fresh mass); median missing mass .018; largest needed mass .0074; reach rates differ by 9.1 points at most (the owner-occupied-housing follow-ups DQ39_A–E), the unmarried block (DQ50 and its follow-ups) next | `15_mass_diagnostic_summary.csv`; `15_mass_diagnostic_flags.csv`; `15_tests_items.csv` | `n_flagged_not_reconcilable`, `n_finite_gt1_not_reconcilable`, `n_zero_denom_not_reconcilable`, `n_supported_gt1_not_reconcilable`, `median_fresh_missing_mass` |
@@ -160,6 +164,42 @@ identity map with that mass allocated freely: `funnel_needed_mass` = Σ_a max{l_
 (`reach_new`, `reach_old_S`, `answer_new_given_reach`, `answer_old_S_given_reach`) are written for every flagged item
 and for every item in `15_tests_items.csv`. These are population compatibility calculations on complete-case
 shares, not calibrated tests; the paper reports the ratios as descriptive diagnostics.
+
+### 3b. The response-style composites and their item set
+
+The two person-level composites of Section 10 are the share of a respondent's substantive answers that fall in an
+extreme category and the share that fall in the neutral middle category. Since 24 September 2026 they are computed
+over a **fixed list of rating-scale items**, `R/15_style_items.csv` (`set = rating`: agreement, satisfaction
+and evaluation scales with verbal anchors; `set = frequency`: frequency scales, used only in the sensitivity file).
+The list was written before the licensed run and revised on the value labels that the run's audit file printed
+(the neutral middle of the two standard-of-living items; attention to politics and advice from co-workers moved to
+or added to the frequency set; the frequency of meeting a partner removed, its first code being a status), and the
+run was repeated with the revised list; the list's MD5 in `15_env.txt` identifies the version behind Section 10. The list declares each item's number of substantive codes `k` and whether its middle code is a
+neutral category. `R/15_style_items.R` verifies every listed item against the value labels in the file: the
+substantive codes (all labels minus the don't-know, refusal, no-answer and not-applicable codes, and the
+`NAP_OVERRIDE` codes of `00_config.R`) must be exactly `1..k`, the observed values must lie in `1..k` (at the entry wave
+too, for the common battery), and a declared midpoint must be an odd `k` whose middle label names a neutral category
+("どちらともいえない", "ふつう", "変わらない", ...). An item that fails the code check enters no composite; one that fails only the
+midpoint check enters the extreme-category composite only. The list is read strictly (a malformed line stops the run),
+and its MD5 is recorded by `04` in the derived file and by `15` in `15_env.txt`; `15` stops if `04` used another list. `04_build_analysis.R`
+computes the composites over all verified rating items (the `rating_all` set); `15_panelcond_designs.R` recomputes
+them, checks that it reproduces `04`, and uses as the **main composites** the *common battery*: the verified rating
+items whose entry-wave counterpart has the same codes, so that the entry-wave and the comparison-wave composites,
+and all five designs, use one item set. `15_style_items_audit.csv` records, for every listed item, its codes and
+labels as read from the file, whether it was verified, its entry-wave counterpart, and which composites it enters;
+it also lists the items that the earlier rule admitted but that are not on the list.
+
+Up to manuscript v0.7 the composites were built from every universe item with four to seven consecutively numbered
+substantive codes, whatever its meaning, which admitted marital status, occupational rank, education and other
+classifications. That rule is retained only as the `v07_asrun` rows of `15_style_sensitivity.csv` (the w5 composite
+over all such items paired with the w1 composite over those with an entry-wave counterpart, as it was run) and the
+`v07_common` rows (the same rule on the common battery), next to `rating_all` (same-wave designs), `rating_common`
+(= the main rows), `agree_common` (the five-point agreement items only, which are asked of every respondent;
+the job-characteristics items and the job and marriage satisfaction items reach only respondents with a job or a
+spouse), `bipolar_common` (the five-point agreement and satisfaction scales) and `ratingfreq_all` /
+`ratingfreq_common` (frequency scales added). Each row gives the number of items in the
+composite at each wave, the estimate, its bootstrap SE (the same joint person bootstrap as every other quantity)
+and the standardised margin `d_std`.
 
 ## 4. The aggregate outputs themselves
 

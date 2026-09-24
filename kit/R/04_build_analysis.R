@@ -11,6 +11,8 @@
 #   (5) 派生データはローカル(DERIVED_DIR/analysis_w5.rds)に保存。
 #       resultsへは集計診断のみ(ユニバース要約・バランス・重み診断)
 # v4 2026-09-15: NAP_OVERRIDE(尺度付随の「いない」コード)を追加。
+# v5 2026-09-24: 中間・極端の人レベル指標は、R/15_style_items.csv に事前指定した評定尺度項目だけから作る
+#   (R/15_style_items.R。以前は「実質コードが 4〜7 個で連番」の全項目が入り、婚姻状態・役職などの名義・分類項目も含まれていた)。
 # 実行: cd <P1ルート> && Rscript analysis/R/04_build_analysis.R
 # ============================================================
 
@@ -19,6 +21,7 @@
 source(file.path(.here, "00_config.R"))
 source(file.path(.here, "00_utils_disclosure.R"))
 suppressMessages({library(haven); library(data.table)})
+source(file.path(.here, "15_style_items.R"))     # response-style composites: fixed item list + code verification
 
 RESP_W5 <- "DQ74M"; MAR_W5 <- "DQ43"
 # 負対照23項目(03_negcontrol_sets_v1.csvで確定): 継続=Z版(w1)、追加=D版(w5)
@@ -107,7 +110,7 @@ main <- function() {
   Ymat  <- matrix(NA_real_, length(keep), length(uni), dimnames = list(NULL, uni))
   Mmat  <- matrix(NA_real_, length(keep), length(uni), dimnames = list(NULL, uni))
   DKmat <- REFmat <- matrix(NA_real_, length(keep), length(uni), dimnames = list(NULL, uni))
-  mid_cnt <- ext_cnt <- mid_n <- ext_n <- rep(0L, length(keep))
+  vl_of <- list(); spec_of <- list(); vals_of <- list(); labs_of <- list()   # value labels, special codes, substantive codes and their labels per universe item (used below and by 15)
   for (v in uni) {
     x  <- d[[v]][keep]; vl <- attr(d[[v]], "labels", exact = TRUE)
     xv <- as.numeric(zap_labels(x))
@@ -128,17 +131,25 @@ main <- function() {
       subst <- pmin(pmax(subst, qs[1]), qs[2])
     }
     Ymat[, v] <- subst
-    # 中間・極端(実質値ラベルが4-7件の順序尺度; 値集合ベースで判定)
-    k <- meta[var == v, k_labels]
-    vals <- if (!is.null(vl)) sort(setdiff(unname(vl), spec)) else integer(0)
-    if (k %in% 4:7 && length(vals) == k && all(diff(vals) == 1)) {
-      ok <- !is.na(subst)
-      if (k %% 2 == 1) { mid_cnt[ok] <- mid_cnt[ok] + as.integer(subst[ok] == vals[(k + 1) / 2])
-                         mid_n[ok] <- mid_n[ok] + 1L }
-      ext_cnt[ok] <- ext_cnt[ok] + as.integer(subst[ok] %in% c(vals[1], vals[k]))
-      ext_n[ok] <- ext_n[ok] + 1L
-    }
+    vl_of[[v]] <- vl; spec_of[[v]] <- spec
+    vals_of[[v]] <- if (!is.null(vl)) sort(setdiff(unname(vl), spec)) else numeric(0)
+    labs_of[[v]] <- if (!is.null(vl)) names(vl)[match(vals_of[[v]], unname(vl))] else character(0)
   }
+  ## 中間・極端の人レベル指標(v5): 事前指定リスト(評定尺度)の項目のうち、ユニバースにあり、実質コードが 1..k で
+  ## 検証できたものだけ。中点指標は、中央のコードが中立ラベル(NEUTRAL_PAT)であることを確認できた奇数件法の項目だけ。
+  st <- read_style_items()
+  style <- rbindlist(lapply(seq_len(nrow(st)), function(i) {
+    v <- names(vl_of)[toupper(names(vl_of)) == st$var[i]]
+    if (!length(v)) return(data.table(st[i], var_file = NA_character_, in_universe = FALSE, ok = FALSE, mid_ok = FALSE, codes = "", labels = "", reason = "not in the item universe"))
+    r <- style_verify(vl_of[[v]], spec_of[[v]], st$k[i], st$midpoint[i])
+    if (r$ok && !style_values_ok(Ymat[, v], st$k[i])) { r$ok <- FALSE; r$mid_ok <- FALSE; r$reason <- sprintf("values outside 1..%d observed", st$k[i]) }
+    data.table(st[i], var_file = v, in_universe = TRUE, ok = r$ok, mid_ok = r$mid_ok, codes = r$codes, labels = r$labels, reason = r$reason)
+  }))
+  k_of <- setNames(as.list(style$k), style$var_file)
+  ext_items <- style[set == "rating" & ok == TRUE, var_file]; mid_items <- style[set == "rating" & mid_ok == TRUE, var_file]
+  sh <- style_shares(Ymat, ext_items, mid_items, k_of)
+  cat("diag: 様式指標(評定尺度リスト): 極端", length(ext_items), "項目 / 中点", length(mid_items), "項目; リストのうちユニバース外",
+      sum(!style$in_universe), "、コード不一致", sum(style$in_universe & !style$ok), "\n")
   ## グリッド(同一問番号で4枝以上・同一尺度)のstraightlining
   meta[, qbase := sub("_[A-Za-z0-9]+$", "", var)]
   grids <- meta[in_universe == TRUE & grepl("_", var),
@@ -169,10 +180,10 @@ main <- function() {
     miss_share = rowMeans(Mmat[, clean_m, drop = FALSE], na.rm = TRUE),
     dk_share   = rowMeans(DKmat, na.rm = TRUE),
     ref_share  = rowMeans(REFmat, na.rm = TRUE),
-    mid_share  = fifelse(mid_n > 0, mid_cnt / mid_n, NA_real_),
-    ext_share  = fifelse(ext_n > 0, ext_cnt / ext_n, NA_real_),
+    mid_share  = sh$mid,
+    ext_share  = sh$ext,
     sl_share   = fifelse(SLn > 0, SL / SLn, NA_real_))
-  cat("diag: 中間/極端の対象項目をもつ人 =", sum(mid_n > 0), "/", sum(ext_n > 0), "\n")
+  cat("diag: 中間/極端の対象項目をもつ人 =", sum(!is.na(sh$mid)), "/", sum(!is.na(sh$ext)), "\n")
 
   ## --- (4) 共変量とIPW --------------------------------------------------------
   sex <- num("sex")[keep]; yb <- num("ybirth")[keep]
@@ -221,11 +232,12 @@ main <- function() {
 
   ## --- (5) 派生保存(ローカルのみ) --------------------------------------------
   idc <- names(d)[toupper(names(d)) %in% toupper(ID_COLS)]
-  src <- list(input = fp, rows = as.integer(keep), cn = as.integer(cn[keep]),
+  src <- list(input = fp, style_items = style_items_id(), rows = as.integer(keep), cn = as.integer(cn[keep]),
               id = if (length(idc)) as.character(zap_labels(d[[idc[1]]]))[keep] else NULL)
   saveRDS(list(T = Tt, w = w, e = e, X = as.matrix(X), Y = Ymat, M = Mmat,
                DK = DKmat, REF = REFmat, person_dq = person_dq,
-               meta = meta[in_universe == TRUE], src = src),
+               meta = meta[in_universe == TRUE], src = src,
+               style = style, codes = vals_of, code_labels = labs_of),   # v5: verified style items; substantive codes and labels of every universe item
           file.path(DERIVED_DIR, "analysis_w5.rds"))
   cat("saved:", file.path(DERIVED_DIR, "analysis_w5.rds"), "\n")
   cat("\n== 04 完了。共有してほしいもの ==\n")

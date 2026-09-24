@@ -1,0 +1,31 @@
+var,set,battery,k,midpoint,note
+DQ101,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ102,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ103,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ104,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ105,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ106,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ107,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ108,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ109,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ110,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ111,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ112,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ113,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ114,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ115,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ116,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ117,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ118,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ119,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ120,rating,agree5,5,TRUE,synthetic five-point agreement item
+DQ121,rating,eval5,5,FALSE,synthetic five-point item declared without a neutral midpoint
+DQ122,rating,eval5,5,FALSE,synthetic five-point item declared without a neutral midpoint
+DQ123,rating,eval5,5,FALSE,synthetic five-point item declared without a neutral midpoint
+DQ124,rating,eval5,5,FALSE,synthetic five-point item declared without a neutral midpoint
+DQ125,rating,eval5,5,FALSE,synthetic five-point item declared without a neutral midpoint
+DQ126,rating,agree5,5,TRUE,synthetic item whose entry-wave counterpart has four codes (coding mismatch: outside the common battery)
+DQ127,frequency,freq5,5,FALSE,synthetic item treated as a frequency scale (sensitivity set only)
+DQ128,frequency,freq5,5,FALSE,synthetic item treated as a frequency scale (sensitivity set only)
+DQ131,rating,agree5,3,TRUE,synthetic binary item listed with a wrong k: must fail the code check
+DQ999,rating,agree5,5,TRUE,synthetic item absent from the file: must be reported as not in the item universe

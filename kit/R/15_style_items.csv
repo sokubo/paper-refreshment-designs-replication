@@ -1,0 +1,73 @@
+var,set,battery,k,midpoint,note
+DQ25A,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ25B,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ25C,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ25D,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ25E,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ25F,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ28A,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ28B,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ28C,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ28D,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ28E,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ28F,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ29A,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ29B,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ29C,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ29D,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ29E,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ29F,rating,agree5,5,TRUE,agreement (agree ... disagree) with a neutral middle category
+DQ18A,rating,satis5,5,TRUE,satisfaction (satisfied ... dissatisfied) with a neutral middle category; code 6 (no job) is not applicable
+DQ18B,rating,satis5,5,TRUE,satisfaction (satisfied ... dissatisfied) with a neutral middle category; code 6 (not married) is not applicable
+DQ18C,rating,satis5,5,TRUE,satisfaction (satisfied ... dissatisfied) with a neutral middle category; code 6 (no friends) is not applicable
+DQ18D,rating,satis5,5,TRUE,satisfaction (satisfied ... dissatisfied) with a neutral middle category; code 6 (no parents) is not applicable
+DQ18E,rating,satis5,5,TRUE,satisfaction (satisfied ... dissatisfied) with a neutral middle category; code 6 (no children) is not applicable
+DQ18F,rating,satis5,5,TRUE,satisfaction (satisfied ... dissatisfied) with a neutral middle category
+DQ04_1A,rating,agree4,4,FALSE,four-point applies ... does not apply (job characteristics)
+DQ04_1B,rating,agree4,4,FALSE,four-point applies ... does not apply (job characteristics)
+DQ04_1C,rating,agree4,4,FALSE,four-point applies ... does not apply (job characteristics); code 5 (no subordinates) is not applicable
+DQ04_1D,rating,agree4,4,FALSE,four-point applies ... does not apply (job characteristics)
+DQ04_1E,rating,agree4,4,FALSE,four-point applies ... does not apply (job characteristics)
+DQ04_1F,rating,agree4,4,FALSE,four-point applies ... does not apply (job characteristics)
+DQ04_1G,rating,agree4,4,FALSE,four-point applies ... does not apply (job characteristics)
+DQ04_1H,rating,agree4,4,FALSE,four-point applies ... does not apply (job characteristics)
+DQ20A,rating,agree4,4,FALSE,four-point applies ... does not apply (attitudes to work and life)
+DQ20B,rating,agree4,4,FALSE,four-point applies ... does not apply (attitudes to work and life)
+DQ20C,rating,agree4,4,FALSE,four-point applies ... does not apply (attitudes to work and life)
+DQ20D,rating,agree4,4,FALSE,four-point applies ... does not apply (attitudes to work and life)
+DQ20E,rating,agree4,4,FALSE,four-point applies ... does not apply (attitudes to work and life)
+DQ20F,rating,agree4,4,FALSE,four-point applies ... does not apply (attitudes to work and life)
+DQ24A,rating,agree4,4,FALSE,four-point self-rated ability (can ... cannot)
+DQ24B,rating,agree4,4,FALSE,four-point self-rated ability (can ... cannot)
+DQ24C,rating,agree4,4,FALSE,four-point self-rated ability (can ... cannot)
+DQ24D,rating,agree4,4,FALSE,four-point self-rated ability (can ... cannot)
+DQ31,frequency,freq4,4,FALSE,frequency of attention to political events (always ... hardly ever); sensitivity set only
+DQ11,rating,eval5,5,TRUE,self-rated health (good ... poor) with a middle category (fair)
+DQ22,rating,eval5,5,TRUE,hope for one's future work and life (five-point) with a neutral middle category
+DQ21,rating,eval5,5,TRUE,self-rated standard of living (affluent ... poor) with a neutral middle category (ordinary)
+DQ27,rating,eval5,5,TRUE,expected change in the standard of living in ten years (better ... worse) with a neutral middle category (no change)
+DQ07A,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07B,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07C,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07D,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07E,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07F,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07G,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07H,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07I,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07J,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07K,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ07L,frequency,freq6,6,FALSE,behaviour frequency (every day ... hardly ever); sensitivity set only
+DQ45A,frequency,freq6,6,FALSE,spouse's behaviour frequency (every day ... hardly ever); asked of the married; sensitivity set only
+DQ45B,frequency,freq6,6,FALSE,spouse's behaviour frequency (every day ... hardly ever); asked of the married; sensitivity set only
+DQ45C,frequency,freq6,6,FALSE,spouse's behaviour frequency (every day ... hardly ever); asked of the married; sensitivity set only
+DQ45D,frequency,freq6,6,FALSE,spouse's behaviour frequency (every day ... hardly ever); asked of the married; sensitivity set only
+DQ45E,frequency,freq6,6,FALSE,couple's behaviour frequency (every day ... hardly ever); asked of the married; sensitivity set only
+DQ45F,frequency,freq6,6,FALSE,couple's behaviour frequency (every day ... hardly ever); asked of the married; sensitivity set only
+DQ12A,frequency,freq5,5,FALSE,frequency of a feeling in the past month (always ... never); sensitivity set only
+DQ12B,frequency,freq5,5,FALSE,frequency of a feeling in the past month (always ... never); sensitivity set only
+DQ12C,frequency,freq5,5,FALSE,frequency of a feeling in the past month (always ... never); sensitivity set only
+DQ12D,frequency,freq5,5,FALSE,frequency of a feeling in the past month (always ... never); sensitivity set only
+DQ12E,frequency,freq5,5,FALSE,frequency of a feeling in the past month (always ... never); sensitivity set only
+DQ12F,frequency,freq5,5,FALSE,frequency of a feeling in the past month (always ... never); sensitivity set only
+DQ04_2,frequency,freq4,4,FALSE,frequency of advice from co-workers (often ... never); no entry-wave counterpart; sensitivity set only
