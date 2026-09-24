@@ -94,10 +94,12 @@ the entry-wave arms in `15_designs_items.csv`; `T1_stat`, `T1_p`, `T2_stat`, `T2
 `15_tests_items.csv`) because those versions omitted the share terms; every bootstrap column and every
 summary file is identical, and no quoted number uses an analytic column.
 
-About half a minute end to end. It exercises every code path of the 2011-episode scripts that the
-real run uses, including the entry-wave correction (36 of 42 synthetic items have an entry-wave
+About half a minute end to end. It exercises the principal computational paths of the 2011-episode
+workflow, including the entry-wave correction (36 of 42 synthetic items have an entry-wave
 counterpart) and the exclusion of nominal codes from the counts (the synthetic marital-status item
-`DQ43`, as in the real run). The synthetic run is a
+`DQ43`, as in the real run). It does not contain every support pattern: the positive/zero case, the
+missing-mass allocation and the other edge cases of the mass diagnostic are checked by `R/15_test_mass_ratio.R`,
+and the synthetic input has no routing-flagged item. The synthetic run is a
 **pipeline check only**: its numbers are not the paper's and must never be reported as such — its
 analysis arms are 2,682 and 963 where the paper's are 2,797 and 963.
 
@@ -110,16 +112,17 @@ needs nothing from outside this archive.
 ## 3. Where each number in Section 10 comes from
 
 `check_manuscript_values_T2.R` performs every comparison below and prints the result. It requires all
-sixteen aggregate files and run records listed at its top (a missing file stops it), requires every key
+seventeen aggregate files and run records listed at its top (a missing file stops it), requires every key
 to identify exactly one row, and first checks that the run records of scripts 15, 11 and 11b name the
-same input file with the SHA-256 given in §5. On 24 September 2026 (JST) it reproduced all 89 quantities from the aggregate outputs of the frozen rerun, and its self-test detected all nine corruptions. One statement of Section 10 is a description rather than a number and is not asserted: that most positive/zero items are asked only of a subgroup (read from the item labels).
+same input file with the SHA-256 given in §5. On 24 September 2026 (JST) it reproduced all 105 quantities from the aggregate outputs of the frozen rerun, and its self-test detected all nine corruptions. One statement of Section 10 is a description rather than a number and is not asserted: that most positive/zero items are asked only of a subgroup (read from the item labels).
 
 | Quantity in Section 10 | Output file | Column |
 |---|---|---|
 | 2,797 continuing survivors; 963 entrants; 574 and 540 survivors | `15_arms.csv` | `n_old_S`, `n_new_total`, `n_new_sm`, `n_new_sm1` |
 | 500 bootstrap replications | `15_arms.csv` | `B` |
 | 268 items with the same coding at entry | `15_arms.csv` | `n_ec_items` |
-| 478 items in the inventory; 76 outside the counts: the 44 of `R/15_item_exclude.csv`, 31 further items with 04's routing flag (three flagged items are also on the list), and one follow-up of a flagged question (DQ46Y) | `15_designs_items.csv` | `exclude_flag`, `nr_routing_flag`, `routing_followup`, `count_exclude` (= any of the three) |
+| 478 items in the inventory; 76 outside the counts: the 44 of `R/15_item_exclude.csv`, 31 further items flagged as potentially incomparable because of differential item nonresponse or routing (04's flag: item-nonresponse gap above 15 points; three flagged items are also on the list), and one follow-up of a flagged question (DQ46Y). The flag is a screening rule; the questionnaire filters have not been verified | `15_designs_items.csv` | `exclude_flag`, `nr_routing_flag`, `routing_followup`, `count_exclude` (= any of the three) |
+| the same counts with the flag recomputed at gap thresholds of 10 and 20 points (identical flagged set and counts) and with no routing exclusion (434 items; 23 / 16 / 10 / 20 / 19; the same two items flagged by all five designs) | `15_routing_sensitivity.csv` | one row per threshold: `n_routing`, `n_followup`, `n_items_*`, `aff_*`, `common_*`, `n_all5`, `all5_items`; `n_disagree_with_04` (= 0: the gap recomputed in 15 at .15 reproduces 04's flag) |
 | 402 items for which a mean contrast is meaningful; 401 for the matched designs (one item without variation in the matched arms); 227 with an entry wave | `15_detection_counts.csv` | `n_items` by `estimator` |
 | flagged 22 / 16 / 9 / 20 / 19 | `15_detection_counts.csv` | `n_affected` by `estimator` |
 | flagged 15 / 12 / 6 / 20 / 19 on the common set of 227 | `15_designs_items.csv` | `class3 == "affected"`, restricted to items with an `ec` row that enter the counts |
@@ -129,7 +132,8 @@ same input file with the SHA-256 given in §5. On 24 September 2026 (JST) it rep
 | extreme-category fall of .21–.25; midpoint rise of .19–.21 | `15_designs_items.csv` | `d_std` for `pdq_ext_share`, `pdq_mid_share` |
 | employment: continuing respondents more often employed by 4.9 points, flagged by the entry-wave correction (q = .02) and survival matching (q = .05), not standardised (q = .15) or naive (q = .38) | `15_designs_items.csv`; `04_item_meta.csv` | `DQ02`, `estimate`, `q` and `class3` for `naive`, `sm`, `ec`, `ec_adj` (BH families: the items that enter the counts, per estimator). `DQ02` keeps its raw codes, 1 = working and 2 = not working, so the estimate −.049 is a lower not-working share among continuing respondents; the checker confirms the coding from the reach rate of the follow-up `DQ02_1`, which only those not working are asked |
 | mass-domination diagnostic: items with two to nine observed categories; items and categories with a positive/zero category; finite exceedances; exceedances in categories with at least ten fresh entrants; exceedances only in sparser categories; the two maxima | `15_mass_diagnostic_summary.csv` | `n_items_eligible`, `n_zero_denom_items`, `n_zero_denom_categories`, `n_finite_gt1`, `n_supported_gt1`, `n_sparse_only_gt1`, `max_finite_ratio`, `max_supported_ratio` (exact dose) |
-| the flagged items themselves: the largest finite ratio (spouse's occupation, `dq44_2l`, 2.256); party identification (`DQ30`, 1.955, sparse categories only); the two supported exceedances (`DQ45A`, 1.192; `DQ08B_4`, 1.020); the two positive/zero items with a routing flag | `15_mass_diagnostic_flags.csv` | one row per item: `funnel_p` (retention for the item's own population: survivors who answered, as a share of the cohort, divided by the share of fresh entrants who reached the question), `funnel_ratio`, `funnel_ratio_supported`, `funnel_zero_denom`, `funnel_sparse_gt1` |
+| fresh item nonresponse: 25 of the 26 flags are reconcilable by the fresh missing mass (the exception is `DQ57DZ`, the minute of bedtime, a positive/zero item with no missing fresh mass); median missing mass .018; largest needed mass .0074; reach rates differ by 9.1 points at most (the owner-occupied-housing follow-ups DQ39_A–E), the unmarried block (DQ50 and its follow-ups) next | `15_mass_diagnostic_summary.csv`; `15_mass_diagnostic_flags.csv`; `15_tests_items.csv` | `n_flagged_not_reconcilable`, `n_finite_gt1_not_reconcilable`, `n_zero_denom_not_reconcilable`, `n_supported_gt1_not_reconcilable`, `median_fresh_missing_mass` |
+| the flagged items themselves: the largest finite ratio (spouse's occupation, `dq44_2l`, 2.256); party identification (`DQ30`, 1.955, sparse categories only); the two supported exceedances (`DQ45A`, 1.192; `DQ08B_4`, 1.020); the two positive/zero items with a routing flag; per item, the fresh missing mass `r_M`, the mass needed to cover the stayers under the identity map, and whether the map remains feasible; the reach and answer shares of both arms | `15_mass_diagnostic_flags.csv` | one row per item: `funnel_p` (retention for the item's own population: survivors who answered, as a share of the cohort, divided by the share of fresh entrants who reached the question), `funnel_ratio`, `funnel_ratio_supported`, `funnel_zero_denom`, `funnel_sparse_gt1` |
 | 23 negative-control items; median \|d\| .033; 1 rejection; 9 equivalences; pooled −.035 (independence SE .0095) | `11_negcontrol_w13_summary.csv` | all columns |
 | person-level bootstrap SE .0186 (2.0 times the independence SE; design effect 3.84); 95% interval [−.072, .001]; −.028 (SE .0185) without the rejected item | `11b_negcontrol_w13_pooled.csv` | `se_person_bootstrap`, `design_effect`, `ci95_lo`, `ci95_hi`; the row with the BH-rejected item dropped |
 | mean correlation .116 between item contrasts across replications | `11b_negcontrol_w13_corr.csv` | `mean_offdiag_corr` |
@@ -137,6 +141,25 @@ same input file with the SHA-256 given in §5. On 24 September 2026 (JST) it rep
 | the 23 item contrasts of the appendix table | `11_negcontrol_w13.csv` | `d`, `se`, `q` |
 | n = 2,638 and n = 619 at the 2019 episode | `11b_negcontrol_w13_pooled.csv` | `n_2007_t13`, `n_2011_t9` |
 | the input file behind all of them | `15_env.txt`, `11_env.txt`, `11b_env.txt` | `input`, `input sha256` (must agree with §5) |
+
+### 3a. The mass diagnostic and fresh item nonresponse
+
+The mass ratio of Section 10 is a complete-case quantity. `15_panelcond_designs.R` computes, per item, `p` as the
+survivors who gave a substantive answer, per member of the cohort, divided by the share of fresh entrants who reached
+the item (their reach rate stands in for eligibility; an item nonresponse recorded as missing rather than with a
+no-answer code cannot be told from routing, see the comment in `04_build_analysis.R`); `Q` as the distribution of
+the stayers' substantive answers; and `F2` as the distribution of the fresh entrants who gave one. Reading the ratio
+as the population inequality of Corollary 4 requires, beyond refreshment validity, that fresh answerers be
+representative of the eligible subgroup. The codes are treated as in `04_build_analysis.R`: a not-applicable code marks a respondent who did not reach the
+item; DK, refusal and no-answer codes are reached but non-substantive; every other value is a substantive answer.
+Survivors who reached the item without a substantive answer are folded into `p` and treated like attriters. Since the
+fresh missing mass (`funnel_missing_mass` = fresh entrants who reached the item without a substantive answer, as a
+share of those who reached it) could sit anywhere, `mass_ratio_item()` also evaluates the
+identity map with that mass allocated freely: `funnel_needed_mass` = Σ_a max{l_a − r_a, 0} with `l_a` = p·Q(a) and
+`r_a` = (1 − r_M)·F2(a); `funnel_identity_feasible` is `needed ≤ missing`. The reach and answer shares of both arms
+(`reach_new`, `reach_old_S`, `answer_new_given_reach`, `answer_old_S_given_reach`) are written for every flagged item
+and for every item in `15_tests_items.csv`. These are population compatibility calculations on complete-case
+shares, not calibrated tests; the paper reports the ratios as descriptive diagnostics.
 
 ## 4. The aggregate outputs themselves
 

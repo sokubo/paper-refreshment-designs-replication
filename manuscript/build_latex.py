@@ -8,7 +8,10 @@ abstract, colorlinks. Everything except the two \\thanks strings comes from the
 qmd's `pdf` format block; the \\thanks are patched in here because they are
 LaTeX-only and would leak into the HTML if put in the YAML.
 
-Re-run after any edit to main.qmd. Requires quarto + pdflatex.
+Re-run after any edit to main.qmd. Requires Quarto and XeLaTeX. The PDF engine (XeLaTeX) and the citation style
+(latex/chicago-author-date.csl, Pandoc's built-in Chicago author-date style, archived here) are pinned in main.qmd;
+the reported build used Quarto 1.6.42 (Pandoc 3.4) and XeTeX from TeX Live 2023. Numerical content does not depend
+on the toolchain; exact pagination and citation formatting do.
 """
 import subprocess, shutil, os, re, sys
 
@@ -17,8 +20,8 @@ LTX  = os.path.join(HERE, 'latex')
 
 # --- the two footnotes on the title page -------------------------------------
 ARCHIVE_REPO = 'https://github.com/sokubo/paper-refreshment-designs-replication'
-ARCHIVE_TAG = 'paper-v0.6'
-ARCHIVE_COMMIT = 'fe0f75c'          # filled in after the release check of the published snapshot
+ARCHIVE_TAG = 'paper-v0.7'
+ARCHIVE_COMMIT = 'COMMIT7'          # filled in after the release check of the published snapshot
 TITLE_THANKS = (
     r"\thanks{Code for every simulation and deterministic check in this paper is in the replication "
     r"archive at \url{%s} (fixed version: tag \texttt{%s}, commit \texttt{%s}). The empirical "
@@ -30,7 +33,7 @@ AUTHOR_THANKS = (
     r"\thanks{Department of Sociology, Toyo University, Tokyo, Japan. "
     r"Email: okubo080@toyo.jp. Website: sokubo.github.io.}"
 )
-DATE = 'September 23, 2026'
+DATE = 'September 24, 2026'
 KEYWORDS = (r"\noindent\textbf{Keywords:} attrition; panel conditioning; partial identification; "
             r"refreshment samples; rotation panels; survey design")
 # -----------------------------------------------------------------------------
@@ -65,6 +68,20 @@ m = re.search(r'\\author\{([^}]*)\}', tex)
 if not m:
     sys.exit('no \\author in generated tex')
 tex = tex[:m.end()-1] + AUTHOR_THANKS + tex[m.end()-1:]
+
+# keep the two long tables (Table 2, strides; Table 3, simulation 3) from splitting into a stub at a page foot
+NEEDSPACE = {'Schedule (entry waves)': r'0.45\textheight', 'Regime (': r'0.4\textheight'}
+def _needspace(tex):
+    out, pos = [], 0
+    for m in re.finditer(r'\\begin\{longtable\}', tex):
+        head = tex[m.start():m.start() + 3000]
+        for key, h in NEEDSPACE.items():
+            if key in head:
+                out.append(tex[pos:m.start()]); out.append('\\needspace{%s}\n' % h); pos = m.start(); break
+    out.append(tex[pos:])
+    return ''.join(out)
+tex = _needspace(tex)
+print('needspace inserted before %d table(s)' % tex.count('\\needspace{'))
 
 # visible Keywords line after the abstract (house format)
 if r'\textbf{Keywords:}' not in tex:

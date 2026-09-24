@@ -22,7 +22,7 @@ INPUT <- list(file   = "ZQ115AQ212BQ116CQ111DQ211EQ115FQ108GQ112HQ112IQ107JQ109K
               sha256 = "d7fea333353e78bacde801045ae433ee3f24ae8d6b3e5af48d5720fec55306c5")
 
 REQUIRED <- c("15_arms.csv", "15_detection_counts.csv", "15_diagnostics_summary.csv", "15_designs_items.csv",
-              "15_mass_diagnostic_summary.csv", "15_mass_diagnostic_flags.csv", "15_tests_items.csv", "15_env.txt", "04_item_meta.csv",
+              "15_mass_diagnostic_summary.csv", "15_mass_diagnostic_flags.csv", "15_tests_items.csv", "15_routing_sensitivity.csv", "15_env.txt", "04_item_meta.csv",
               "11_negcontrol_w13_summary.csv", "11_negcontrol_w13.csv", "11_env.txt",
               "11b_negcontrol_w13_pooled.csv", "11b_negcontrol_w13_corr.csv", "11b_loading_grid.csv", "11b_env.txt")
 
@@ -184,10 +184,41 @@ run_checks <- function(RES, verbose = TRUE) {
   chk("siblings for help in finding work (DQ08B_4): supported ratio", one(fl[var == "DQ08B_4"], "DQ08B_4")$funnel_ratio_supported, 1.020, 5e-4)
   chk("spouse prepares meals (DQ45A): supported ratio", one(fl[var == "DQ45A"], "DQ45A")$funnel_ratio_supported, 1.192, 5e-4)
   chk("party identification exceeds one only in sparse categories", as.numeric(pid$funnel_ratio_supported <= 1), 1)
-  ## positive/zero items in the marriage-history block, whose routing differs between the cohorts' questionnaires
+  ## positive/zero items in the marriage-history block flagged for differential item nonresponse or routing
   rt <- unique(it[family == "A_substantive", .(var, nr_routing_flag)])
   chk("positive/zero items on how a respondent with a fiancé(e) or partner met that person (DQ54_2*)", sum(grepl("^DQ54_2", toupper(fl[funnel_zero_denom > 0, var]))), 6)
-  chk("positive/zero items whose routing differs", sort(fl[funnel_zero_denom > 0 & var %in% rt[nr_routing_flag %in% TRUE, var], var]), MASS$zero_denom_routing)
+  chk("positive/zero items with the routing flag", sort(fl[funnel_zero_denom > 0 & var %in% rt[nr_routing_flag %in% TRUE, var], var]), MASS$zero_denom_routing)
+  ## fresh item nonresponse: flags that survive the allocation of the fresh missing mass (identity map infeasible even then)
+  if (!"funnel_identity_feasible" %in% names(fl)) stop("15_mass_diagnostic_flags.csv has no funnel_identity_feasible column: rerun R/15_panelcond_designs.R with this kit", call. = FALSE)
+  chk("flags not reconcilable by the fresh missing mass: all / finite > 1 / positive-zero / supported > 1",
+      c(ms$n_flagged_not_reconcilable, ms$n_finite_gt1_not_reconcilable, ms$n_zero_denom_not_reconcilable, ms$n_supported_gt1_not_reconcilable), MASS$not_reconcilable)
+  chk("the same, recounted from the flag list", c(sum((fl$funnel_ratio > 1 | fl$funnel_zero_denom > 0) & fl$funnel_identity_feasible %in% FALSE, na.rm = TRUE),
+      sum(fl$funnel_ratio > 1 & fl$funnel_identity_feasible %in% FALSE, na.rm = TRUE)), MASS$not_reconcilable[1:2])
+  chk("median fresh missing mass among eligible items (1.8%)", ms$median_fresh_missing_mass, MASS$median_missing, 5e-4)
+  chk("the one flag not reconcilable is the minute of bedtime (DQ57DZ), a positive/zero item with no fresh missing mass",
+      c(fl[funnel_identity_feasible %in% FALSE, var], as.character(fl[var == "DQ57DZ", funnel_zero_denom] > 0), as.character(fl[var == "DQ57DZ", funnel_missing_mass])), c("DQ57DZ", "TRUE", "0"))
+  chk("largest mass needed to cover the stayers among the flagged items (.0074)", max(fl$funnel_needed_mass, na.rm = TRUE), 0.0074, 5e-5)
+  tst <- rd("15_tests_items.csv")[dose_def == "exact" & family == "A_substantive" & !is.na(funnel_ncat)]
+  gap <- tst$reach_new - tst$reach_old_S
+  chk("reach rates of the two arms differ by less than ten points over the 419 items (max gap in points, one decimal)", round(100 * max(abs(gap)), 1), 9.1, 5e-2)
+  chk("largest reach gaps: owner-occupied housing follow-ups (DQ39_*) and the unmarried block (DQ50)",
+      c(all(grepl("^DQ39_", tst$var[abs(gap) > 0.08])), any(grepl("^DQ50$", tst$var[gap > 0.07]))), c(TRUE, TRUE))
+  chk("items named in the text: reconcilable (spouse's occupation, party identification, meals, siblings)",
+      as.numeric(fl[match(c("dq44_2l", "DQ30", "DQ45A", "DQ08B_4"), var), funnel_identity_feasible]), MASS$named_feasible)
+  ## routing-threshold sensitivity (the flag recomputed at 10 and 20 points and with no routing exclusion)
+  rs <- rd("15_routing_sensitivity.csv")[dose_def == "exact"]
+  uniq(rs, "threshold", "15_routing_sensitivity (exact)")
+  r15 <- one(rs[abs(threshold - 0.15) < 1e-9], "routing sensitivity, threshold .15")
+  chk("routing gap recomputed in 15 at .15 reproduces 04's flag (disagreements)", r15$n_disagree_with_04, 0)
+  chk("threshold .15 reproduces the main counts: naive / sm / ssm / ec / ec_adj", c(r15$aff_naive, r15$aff_sm, r15$aff_ssm, r15$aff_ec, r15$aff_ec_adj), COUNTS$flagged)
+  chk("threshold .15 reproduces the routing exclusions and the follow-up", c(r15$n_routing, r15$n_followup), c(COUNTS$excluded[2] - 1, 1))
+  sens <- function(th) { r <- one(if (is.finite(th)) rs[abs(threshold - th) < 1e-9] else rs[!is.finite(threshold)], paste("routing sensitivity", th))
+    c(r$n_routing + r$n_followup, r$aff_naive, r$aff_sm, r$aff_ssm, r$aff_ec, r$aff_ec_adj, r$n_all5) }
+  chk("threshold .10: excluded / flagged x 5 / all five", sens(0.10), SENS$t10)
+  chk("threshold .20: excluded / flagged x 5 / all five", sens(0.20), SENS$t20)
+  chk("no routing exclusion: excluded / flagged x 5 / all five", sens(Inf), SENS$none)
+  rnone <- one(rs[!is.finite(threshold)], "routing sensitivity, none")
+  chk("no routing exclusion: items in the counts (434) and the two items flagged by all five designs", c(rnone$n_items_naive, rnone$all5_items), c(434, COUNTS$all5_items_semicolon))
 
   ## --- 2019 episode, negative-control battery ---------------------------------
   chk("negative-control items at the 2019 episode", nc$n_items, 23)
@@ -238,9 +269,11 @@ run_checks <- function(RES, verbose = TRUE) {
 
 ## values quoted in Section 10 that are set from the frozen rerun (counts, diagnostic denominators, mass diagnostic)
 COUNTS <- list(n_naive = 402, n_matched = c(401, 401), flagged = c(22, 16, 9, 20, 19), excluded = c(44, 32), followup = "DQ46Y",
-               common = c(15, 12, 6, 20, 19), n_all5 = 2, all5_items = "DQ26, DQ44_4A")
+               common = c(15, 12, 6, 20, 19), n_all5 = 2, all5_items = "DQ26, DQ44_4A", all5_items_semicolon = "DQ26; DQ44_4A")
 DIAG <- list(ns = c(30, 227), sd = c(36, 401), sd_nr = c(66, 396), share_nr = 0.167, grid4 = c(50, 66))   # rejections and denominators (frozen rerun)
+SENS <- list(t10 = c(32, 22, 16, 9, 20, 19, 2), t20 = c(32, 22, 16, 9, 20, 19, 2), none = c(0, 23, 16, 10, 20, 19, 2))   # routing-threshold sensitivity (frozen rerun)
 MASS <- list(max_finite_item = "dq44_2l", supported_items = c("DQ08B_4", "DQ45A"), eligible = 419, zero_denom_items = 14, zero_denom_categories = 16,
+             not_reconcilable = c(1, 0, 1, 0), median_missing = 0.0177, named_feasible = c(1, 1, 1, 1),
              finite_gt1 = 13, max_finite = 2.256, supported_gt1 = 2, sparse_only_gt1 = 11, max_supported = 1.192,
              party_id = 1.955, zero_denom_routing = c("DQ49_2P", "DQ49_2Z"))
 

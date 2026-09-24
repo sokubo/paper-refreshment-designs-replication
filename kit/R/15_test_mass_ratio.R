@@ -2,7 +2,8 @@
 # P1 JLPS kit — unit test of the mass-domination helper (15_mass_ratio.R). No data are read.
 #   Rscript R/15_test_mass_ratio.R        (exits with status 1 on any failure)
 # Cases: positive/zero, zero/zero (codebook category observed in neither group), a rare (sparse) category,
-# an ordinary finite ratio, the population case Q = F2, and ineligible items.
+# an ordinary finite ratio, the population case Q = F2, ineligible items, and the missing-mass allocation
+# (fresh item nonresponse) including a constructed population example.
 # ============================================================
 .here <- local({ a <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
   if (length(a)) dirname(normalizePath(a[1])) else file.path("analysis", "R") })
@@ -64,6 +65,26 @@ expect("p = 1.2: ratio equals p (not rejected as ineligible)", c(m$eligible, m$r
 expect("one observed category: not eligible", mass_ratio_item(rp(1, 5), rp(1, 5), .5)$eligible, FALSE)
 expect("ten observed categories: not eligible", mass_ratio_item(1:10, 1:10, .5)$eligible, FALSE)
 expect("no fresh-cohort answer: not eligible", mass_ratio_item(1:3, c(NA, NA), .5)$eligible, FALSE)
+
+## 8. fresh item nonresponse: a constructed population example. Both cohorts Y ~ Bernoulli(.5), no conditioning,
+##    everyone eligible; panel survival .8 independent of Y and every survivor answers; among fresh entrants all
+##    with Y = 0 answer and .2 of those with Y = 1 (fresh answerers 5/6 : 1/6). Complete-case ratio 2.4 at Y = 1,
+##    population ratio .8 in both categories; missing mass .4 and needed mass .3: the identity map is compatible.
+yo <- c(rp(0, 400), rp(1, 400)); yn <- c(rp(0, 500), rp(1, 100)); m <- mass_ratio_item(yo, yn, .8, n_new_reached = 1000)
+expect("counterexample: complete-case ratio 2.4 (.8 * .5 / (1/6))", m$ratio_finite, 2.4, 1e-9)
+expect("counterexample: missing mass .4 among fresh entrants who reached the item", m$missing_mass, .4)
+expect("counterexample: mass needed to cover the stayers .3", m$needed_mass, .3, 1e-9)
+expect("counterexample: identity map compatible once the missing mass is allocated", m$identity_feasible, TRUE)
+## 9. no fresh nonresponse: an exceedance cannot be reconciled (needed > 0 = missing)
+yo <- c(rp(1, 40), rp(2, 60)); yn <- c(rp(1, 50), rp(2, 50)); m <- mass_ratio_item(yo, yn, .9, n_new_reached = 100)
+expect("no missing mass: needed mass .9 * .60 - .50 = .04, not reconcilable", c(m$missing_mass, m$needed_mass, m$identity_feasible), c(0, .04, FALSE), 1e-9)
+## 10. positive/zero with enough missing mass: reconcilable; with too little: not
+yo <- c(rp(0, 90), rp(1, 10)); yn <- rp(0, 80); m <- mass_ratio_item(yo, yn, .5, n_new_reached = 100)
+expect("positive/zero, missing .2 >= needed .05: reconcilable", c(m$missing_mass, m$needed_mass, m$identity_feasible), c(.2, .05, TRUE), 1e-9)
+m <- mass_ratio_item(yo, yn, .5, n_new_reached = 82)
+expect("positive/zero, missing 2/82 < needed .05: not reconcilable", c(round(m$missing_mass, 4), m$needed_mass, m$identity_feasible), c(round(2/82, 4), .05, FALSE), 1e-9)
+## 11. n_new_reached not supplied: the allocation fields are NA and everything else unchanged
+m0 <- mass_ratio_item(yo, yn, .5); expect("no reach count: allocation fields NA", c(is.na(m0$missing_mass), is.na(m0$needed_mass), is.na(m0$identity_feasible)), c(TRUE, TRUE, TRUE))
 
 cat(sprintf("\n%d checks: %d ok, %d failed\n", ok + bad, ok, bad))
 if (bad > 0L) quit(status = 1L)

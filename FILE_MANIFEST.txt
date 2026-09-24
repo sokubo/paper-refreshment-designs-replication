@@ -27,6 +27,7 @@ kit/synthetic_out/15_env.txt
 kit/synthetic_out/15_item_flags.csv
 kit/synthetic_out/15_mass_diagnostic_flags.csv
 kit/synthetic_out/15_mass_diagnostic_summary.csv
+kit/synthetic_out/15_routing_sensitivity.csv
 kit/synthetic_out/15_tests_items.csv
 kit/synthetic_out/15_validation.csv
 kit/synthetic/SYNTH_ZQ100AQ100BQ100CQ100DQ100EQ100FQ100GQ100HQ100IQ100.dta
@@ -35,6 +36,7 @@ manuscript/build_latex.py
 manuscript/figures/fig1_funnel.pdf
 manuscript/figures/fig1_funnel.png
 manuscript/figures/make_fig1_funnel.py
+manuscript/latex/chicago-author-date.csl
 manuscript/latex/preamble_extra_T2.tex
 manuscript/main.html
 manuscript/main.pdf

@@ -18,8 +18,8 @@ Preprint: arXiv:XXXX.XXXXX (to be filled at posting). Author: Shoki Okubo (Toyo 
 release-check records (`RELEASE_CHECK*`), which are written after the manifest.
 
 ## Checked commit and release record
-Computational commit checked against the numerical results of the manuscript: `fe0f75c96c10b8e1dcedb45210633b4d295637ea` — see `RELEASE_CHECK.md`, `RELEASE_CHECK_run.log` (the console output of the clean-copy run) and `RELEASE_CHECK_sessionInfo.txt`. Later commits change only the manuscript (its source, PDF and any figure script under `manuscript/`), documentation and the release record — `git diff --stat fe0f75c96c10b8e1dcedb45210633b4d295637ea HEAD` lists them — so the computational scripts and outputs are those of the checked commit; after any change to them the release check is rerun and this line is regenerated.
-Tag of the checked release: `paper-v0.6`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
+Computational commit checked against the numerical results of the manuscript: not yet checked for this version. The `RELEASE_CHECK*` files in this snapshot are the record of the previously checked commit `fe0f75c96c10b8e1dcedb45210633b4d295637ea`, whose scripts or outputs differ from these; the release check is rerun on this version before it is tagged, and this line is then regenerated.
+Tag of the checked release: `paper-v0.7`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
 Third-party reproduction: none. The release record is the author's own re-execution of the published snapshot in a clean copy.
 
 ## Data
@@ -32,7 +32,11 @@ Third-party reproduction: none. The release record is the author's own re-execut
   needs `haven`, `data.table` and `panelcond` (`remotes::install_github("sokubo/panelcond@v0.1.4")`).
 - Python 3 (standard library only) for `sims/check_design_rank.py`; Python 3 with `matplotlib` for the one
   figure (`manuscript/figures/make_fig1_funnel.py`).
-- Quarto + XeLaTeX for the manuscript; `manuscript/build_latex.py` reproduces `main.pdf` and `latex/main.tex`.
+- Quarto 1.6.42 (Pandoc 3.4) + XeLaTeX (TeX Live 2023) for the manuscript; `manuscript/build_latex.py` reproduces
+  `main.pdf` and `latex/main.tex`. The PDF engine (XeLaTeX) and the citation style (`manuscript/latex/chicago-author-date.csl`,
+  Pandoc's built-in Chicago author-date style) are pinned in `main.qmd`. The numerical scripts do not depend on
+  this toolchain; exact pagination and citation formatting do, so a build with another Quarto or TeX Live version
+  can differ in page breaks and reference layout without any change to a statement, number or formula.
 - **Set a UTF-8 locale before running anything in `kit/`** (`export LC_ALL=C.UTF-8` on Linux). The item
   labels are Japanese, and in a non-UTF-8 locale `haven` writes them as `<U+XXXX>` escapes, which changes
   the bytes of the synthetic input without changing any value. Under a fixed UTF-8 locale the synthetic
@@ -54,7 +58,7 @@ Run the `sims/` steps from `sims/`.
 | 7 | `sims/check_manuscript_values.R --selftest` | console | seconds | every simulation and design-rank value quoted in the manuscript |
 | 8 | `manuscript/figures/make_fig1_funnel.py` | `fig1_funnel.png/pdf` | seconds | Figure 1 |
 | 9 | `kit/R/15_make_synthetic.R` | `$P1_DATA_DIR/raw/*.dta`, byte-identical to `kit/synthetic/*.dta` | ~1 s | the public stand-in for the restricted input |
-| 10 | `kit/R/15_test_mass_ratio.R`, then `kit/R/04_build_analysis.R` + `kit/R/15_panelcond_designs.R --B 50` + `kit/R/15b_item_flags.R` | console (18 checks); `$P1_RESULTS_DIR/*`, identical to `kit/synthetic_out/*` apart from `15_env.txt` | ~30 s | the unit test of the mass-domination computation; the Section 10 pipeline of the 2011 episode, run on synthetic data |
+| 10 | `kit/R/15_test_mass_ratio.R`, then `kit/R/04_build_analysis.R` + `kit/R/15_panelcond_designs.R --B 50` + `kit/R/15b_item_flags.R` | console (27 checks); `$P1_RESULTS_DIR/*`, identical to `kit/synthetic_out/*` apart from `15_env.txt` | ~30 s | the unit test of the mass-domination computation (positive/zero, sparse and zero/zero categories; the missing-mass allocation for fresh item nonresponse, including the population counterexample); the Section 10 pipeline of the 2011 episode, run on synthetic data, including the routing-threshold sensitivity (`15_routing_sensitivity.csv`) |
 | 11 | `kit/check_manuscript_values_T2.R <results dir> --selftest` | console | seconds | every number quoted in Section 10, reprinted from the aggregate outputs after checking that all of them come from one input file; then the checker's self-test |
 
 Steps 1–8 are self-contained and use no data; steps 9–10 are run from `kit/` with the environment
@@ -87,7 +91,7 @@ are theorems, and the appendix that supports them is synthetic throughout.
 
 ## Manuscript
 
-`manuscript/main.qmd` (source), `references.bib`, `latex/preamble_extra_T2.tex`, `build_latex.py`,
+`manuscript/main.qmd` (source), `references.bib`, `latex/preamble_extra_T2.tex`, `latex/chicago-author-date.csl`, `build_latex.py`,
 `figures/`. Render: `quarto render main.qmd --to html` and `python3 build_latex.py`.
 
 ## Citation

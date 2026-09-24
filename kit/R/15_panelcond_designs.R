@@ -14,7 +14,7 @@
 # 入所波(w1)の対応変数: jlps_docs/varmap_w1-19.csv の w1/w5 列 + 15_entry_overrides.csv(手動)。
 #   値ラベル集合(特殊コードを除く)が w1 と w5 で一致する項目だけ EC を計算(不一致は 15_ec_unavailable.csv に列挙)。
 # 出力(すべて集計値、N<10 抑制): 15_designs_items.csv / 15_tests_items.csv / 15_detection_counts.csv /
-#   15_diagnostics_summary.csv / 15_mass_diagnostic_summary.csv / 15_mass_diagnostic_flags.csv / 15_core32.csv /
+#   15_diagnostics_summary.csv / 15_mass_diagnostic_summary.csv / 15_mass_diagnostic_flags.csv / 15_routing_sensitivity.csv / 15_core32.csv /
 #   15_arms.csv / 15_validation.csv / 15_ec_unavailable.csv /
 #   15_env.txt(R・パッケージ・入力ファイルの版)
 # 実行: cd <P1ルート> && Rscript analysis/R/15_panelcond_designs.R [--B 500] [--seed 20260915] [--dose exact,any]
@@ -241,7 +241,7 @@ main <- function() {
   }
 
   ## ---- 6. 用量定義ごとに実行 -------------------------------------------------------------
-  res_all <- list(); tests_all <- list(); val_all <- list(); arms_all <- list()
+  res_all <- list(); tests_all <- list(); val_all <- list(); arms_all <- list(); sens_all <- list()
   for (dose_def in DOSE_DEFS) {
     S <- if (dose_def == "exact") S_exact else S_any
     cat(sprintf("\n== dose_def = %s: old survivors (S=1) = %d / %d; new = %d (s_m=1: %d, s_m1=1: %d)\n", dose_def, sum(S), n_old, n_new, sum(Sm), sum(Sm1)))
@@ -296,15 +296,31 @@ main <- function() {
     ## [answering stayers / cohort size] / P(G), with P(G) estimated by the share of fresh entrants who reached the
     ## question (not routed past it: column M of 04 is defined exactly for them). For items asked of everyone P(G) = 1.
     ## (Before 2026-09-24 the cohort-wide rate was used for every item, which diluted the ratio of subgroup items.)
-    elig_new <- colMeans(!is.na(Yn[, J + seq_len(J), drop = FALSE]))
+    ## Fresh item nonresponse (since 2026-09-24): the fresh distribution above is that of entrants who gave a
+    ## substantive answer, while p refers to everyone in G. The reach and answer shares of both arms are recorded
+    ## (disclosure-safe shares), and the identity map is also evaluated with the fresh missing mass allocated
+    ## freely (mass_ratio_item(): needed_mass <= missing_mass). The observed reach rate stands in for eligibility;
+    ## a true item nonresponse recorded as NA rather than with a no-answer code cannot be told from routing (04).
+    reached_new <- colSums(!is.na(Yn[, J + seq_len(J), drop = FALSE]))
+    elig_new <- reached_new / n_new
+    reach_old_S  <- colSums(!is.na(Yo[S == 1L, J + seq_len(J), drop = FALSE])) / sum(S)          # survivors who reached the item
+    ans_old_S    <- colSums(IOf[, seq_len(J), drop = FALSE])                                        # survivors who answered
+    ans_new      <- colSums(!is.na(Yn[, seq_len(J), drop = FALSE]))                                 # fresh entrants who answered
     funnel <- funnel_sup <- p_item <- rep(NA_real_, JJ); funnel_zd <- funnel_sp <- funnel_ncat <- rep(NA_integer_, JJ)
+    funnel_miss <- funnel_need <- rep(NA_real_, JJ); funnel_feas <- rep(NA, JJ)
+    reach_new_v <- reach_oldS_v <- ans_new_v <- ans_oldS_v <- rep(NA_real_, JJ)
     for (j in seq_len(J)) {                                          # A 族の離散項目のみ
       if (!(elig_new[j] > 0)) next
       p_item[j] <- full$p_surv[j] / elig_new[j]
-      mr <- mass_ratio_item(Yo[IOf[, j], j], Yn[!is.na(Yn[, j]), j], p_item[j], max_cat = 9L, min_fresh = MIN_CELL)
+      reach_new_v[j] <- elig_new[j]; reach_oldS_v[j] <- reach_old_S[j]
+      ans_new_v[j] <- ans_new[j] / reached_new[j]
+      ans_oldS_v[j] <- if (reach_old_S[j] > 0) ans_old_S[j] / (reach_old_S[j] * sum(S)) else NA_real_
+      mr <- mass_ratio_item(Yo[IOf[, j], j], Yn[!is.na(Yn[, j]), j], p_item[j], max_cat = 9L, min_fresh = MIN_CELL,
+                            n_new_reached = reached_new[j])
       if (!mr$eligible) next
       funnel[j] <- mr$ratio_finite; funnel_sup[j] <- mr$ratio_supported
       funnel_zd[j] <- mr$n_zero_denom; funnel_sp[j] <- mr$n_sparse_gt1; funnel_ncat[j] <- mr$ncat
+      funnel_miss[j] <- mr$missing_mass; funnel_need[j] <- mr$needed_mass; funnel_feas[j] <- mr$identity_feasible
     }
     ## (e) 表の組み立て
     pc[, `:=`(dose_def = dose_def)]
@@ -317,6 +333,13 @@ main <- function() {
     pc[, funnel_zero_denom := funnel_zd[match(col, cols)]]
     pc[, funnel_sparse_gt1 := funnel_sp[match(col, cols)]]
     pc[, funnel_ncat := funnel_ncat[match(col, cols)]]
+    pc[, funnel_missing_mass := funnel_miss[match(col, cols)]]
+    pc[, funnel_needed_mass := funnel_need[match(col, cols)]]
+    pc[, funnel_identity_feasible := funnel_feas[match(col, cols)]]
+    pc[, reach_new := reach_new_v[match(col, cols)]]
+    pc[, reach_old_S := reach_oldS_v[match(col, cols)]]
+    pc[, answer_new_given_reach := ans_new_v[match(col, cols)]]
+    pc[, answer_old_S_given_reach := ans_oldS_v[match(col, cols)]]
     pc[, se := fifelse(is.na(se_boot), se_analytic, se_boot)]
     pc[, z := estimate / se]; pc[, p := 2 * pnorm(-abs(z))]
     pc[, binary := binary_col[match(col, cols)]]
@@ -330,26 +353,60 @@ main <- function() {
     if ("filter_mismatch" %in% names(meta)) pc[, filter_mismatch := meta$filter_mismatch[match(var, meta$var)]]
     if ("nr_routing_flag" %in% names(meta)) pc[, nr_routing_flag := meta$nr_routing_flag[match(var, meta$var)]] else pc[, nr_routing_flag := NA]
     ## items outside the counts (since 2026-09-24): those listed in 15_item_exclude.csv (nominal codes, date and
-    ## clock-time components, duplicate recodes) and those whose routing differs between the cohorts' questionnaires
-    ## (04's nr_routing_flag: the continuing cohort answers only if newly married, so the arms are different subgroups)
-    ## a follow-up component of a routing-flagged question (the same variable name plus a component suffix, e.g. DQ46Y,
+    ## clock-time components, duplicate recodes) and those flagged as potentially incomparable between the arms
+    ## because of differential item nonresponse or routing (04's nr_routing_flag: the item-nonresponse rate differs
+    ## between continuing respondents and entrants by more than the threshold; the questionnaire filters behind the
+    ## difference have not been verified, so the flag is a screening rule, not a documented routing difference).
+    ## A follow-up component of a flagged question (the same variable name plus a component suffix, e.g. DQ46Y,
     ## years of premarital cohabitation, after DQ46) inherits the flag: its non-routed respondents are coded missing
-    ## or not applicable rather than with the no-answer code, so 04's rate rule does not see it (since 2026-09-24)
-    rf <- unique(toupper(pc[nr_routing_flag %in% TRUE, var]))
-    fu <- function(v) { if (!length(rf)) return(FALSE); v <- toupper(v); any(startsWith(v, rf) & grepl("^[A-Z_][A-Z0-9_]*$", substring(v, nchar(rf) + 1L)) & nchar(v) > nchar(rf)) }
-    pc[, routing_followup := !(nr_routing_flag %in% TRUE) & vapply(var, fu, logical(1))]
+    ## or not applicable rather than with the no-answer code, so 04's rate rule does not see it (since 2026-09-24).
+    ## classify() applies the exclusion, the BH families and the three-way classification for a given routing
+    ## flag; the main run uses 04's flag, and the threshold sensitivity below re-applies it with other thresholds.
+    classify <- function(pc, routing) {
+      pc <- copy(pc); pc[, nr_routing_flag := routing]
+      rf <- unique(toupper(pc[nr_routing_flag %in% TRUE, var]))
+      fu <- function(v) { if (!length(rf)) return(FALSE); v <- toupper(v); any(startsWith(v, rf) & grepl("^[A-Z_][A-Z0-9_]*$", substring(v, nchar(rf) + 1L)) & nchar(v) > nchar(rf)) }
+      pc[, routing_followup := !(nr_routing_flag %in% TRUE) & vapply(var, fu, logical(1))]
+      pc[, count_exclude := exclude_flag | (nr_routing_flag %in% TRUE) | routing_followup]
+      pc[, `:=`(q = NA_real_, q_tost = NA_real_)]
+      pc[count_exclude == FALSE, q := p.adjust(p, "BH"), by = .(family, estimator)]
+      pc[count_exclude == FALSE, q_tost := p.adjust(p_tost, "BH"), by = .(family, estimator)]
+      pc[, class3 := fifelse(is.na(se) | se <= 0, "n/a (no variation)", fifelse(q < Q_CUT, "affected", fifelse(q_tost < Q_CUT, "equivalent", "undetermined")))]
+      pc[exclude_flag == TRUE & !(is.na(se) | se <= 0), class3 := "excluded (listed code)"]
+      pc[exclude_flag == FALSE & count_exclude == TRUE & !(is.na(se) | se <= 0), class3 := "excluded (routing flag)"]
+      pc
+    }
+    pc <- classify(pc, pc$nr_routing_flag)
     if (any(pc$routing_followup)) cat("diag: follow-ups of routing-flagged questions (outside the counts):", paste(unique(pc[routing_followup == TRUE, var]), collapse = ", "), "\n")
-    pc[, count_exclude := exclude_flag | (nr_routing_flag %in% TRUE) | routing_followup]
-    pc[, `:=`(q = NA_real_, q_tost = NA_real_)]
-    pc[count_exclude == FALSE, q := p.adjust(p, "BH"), by = .(family, estimator)]
-    pc[count_exclude == FALSE, q_tost := p.adjust(p_tost, "BH"), by = .(family, estimator)]
-    pc[, class3 := fifelse(is.na(se) | se <= 0, "n/a (no variation)", fifelse(q < Q_CUT, "affected", fifelse(q_tost < Q_CUT, "equivalent", "undetermined")))]
-    pc[exclude_flag == TRUE & !(is.na(se) | se <= 0), class3 := "excluded (listed code)"]
-    pc[exclude_flag == FALSE & count_exclude == TRUE & !(is.na(se) | se <= 0), class3 := "excluded (routing differs)"]
     pc[, label := meta$label[match(var, meta$var)]]
     res_all[[dose_def]] <- pc
+    ## Routing-threshold sensitivity (since 2026-09-24): the same counts with the flag recomputed at other
+    ## thresholds of the item-nonresponse gap (04 uses .15; the gap is recomputed here over the same risk set
+    ## and compared with 04's flag at .15), and with no routing exclusion at all.
+    Mo <- Yo[, J + seq_len(J), drop = FALSE]; Mn <- Yn[, J + seq_len(J), drop = FALSE]
+    nr_gap <- abs(colMeans(Mo, na.rm = TRUE) - colMeans(Mn, na.rm = TRUE)); nr_gap[!is.finite(nr_gap)] <- 0
+    names(nr_gap) <- vars
+    gap_of <- nr_gap[match(pc$var, vars)]; gap_of[is.na(gap_of)] <- 0
+    sens <- rbindlist(lapply(c(0.10, 0.15, 0.20, Inf), function(thr) {
+      pcs <- classify(pc, if (is.finite(thr)) (gap_of > thr) else rep(FALSE, nrow(pc)))
+      A <- pcs[family == "A_substantive" & class3 != "n/a (no variation)" & !count_exclude]
+      cnt <- A[, .(n_items = .N, n_affected = sum(class3 == "affected")), by = estimator]
+      common <- A[estimator == "ec", unique(var)]
+      cc <- sapply(c("naive", "sm", "ssm", "ec", "ec_adj"), function(e) A[estimator == e & var %in% common & class3 == "affected", uniqueN(var)])
+      five <- Reduce(intersect, lapply(c("naive", "sm", "ssm", "ec", "ec_adj"), function(e) A[estimator == e & class3 == "affected", unique(var)]))
+      u <- unique(pcs[family == "A_substantive", .(var, nr_routing_flag, routing_followup, exclude_flag)])
+      data.table(dose_def = dose_def, threshold = thr,
+                 n_routing = sum(u$nr_routing_flag %in% TRUE & !u$exclude_flag), n_followup = sum(u$routing_followup & !u$exclude_flag),
+                 n_disagree_with_04 = if (is.finite(thr) && abs(thr - 0.15) < 1e-9) sum((gap_of > thr) != (pc$nr_routing_flag %in% TRUE)) else NA_integer_,
+                 n_items_naive = cnt[estimator == "naive", n_items], n_items_sm = cnt[estimator == "sm", n_items], n_items_ec = cnt[estimator == "ec", n_items],
+                 aff_naive = cnt[estimator == "naive", n_affected], aff_sm = cnt[estimator == "sm", n_affected], aff_ssm = cnt[estimator == "ssm", n_affected],
+                 aff_ec = cnt[estimator == "ec", n_affected], aff_ec_adj = cnt[estimator == "ec_adj", n_affected],
+                 common_naive = cc[["naive"]], common_sm = cc[["sm"]], common_ssm = cc[["ssm"]], common_ec = cc[["ec"]], common_ec_adj = cc[["ec_adj"]],
+                 n_all5 = length(five), all5_items = paste(sort(five), collapse = "; "))
+    }))
+    sens_all[[dose_def]] <- sens
     ## 診断表(項目ごと; ブートストラップ SE 版の T1/T2)
-    te <- unique(pc[, .(dose_def, col, family, var, label, T1_stat, T1_p, T2_stat, T2_p, delta_entry, n_pairs, p_survive, funnel_ratio, funnel_ratio_supported, funnel_p, funnel_zero_denom, funnel_sparse_gt1, funnel_ncat, exclude_flag, count_exclude)])
+    te <- unique(pc[, .(dose_def, col, family, var, label, T1_stat, T1_p, T2_stat, T2_p, delta_entry, n_pairs, p_survive, funnel_ratio, funnel_ratio_supported, funnel_p, funnel_zero_denom, funnel_sparse_gt1, funnel_ncat, funnel_missing_mass, funnel_needed_mass, funnel_identity_feasible, reach_new, reach_old_S, answer_new_given_reach, answer_old_S_given_reach, exclude_flag, count_exclude, nr_routing_flag)])
     te[, `:=`(d1 = full$d1[match(col, cols)], d2 = full$d2[match(col, cols)],
               d1_se_boot = se_boot[cbind(match(col, cols), match("d1", keys))], d2_se_boot = se_boot[cbind(match(col, cols), match("d2", keys))],
               delta_se_boot = se_boot[cbind(match(col, cols), match("delta", keys))])]
@@ -373,7 +430,11 @@ main <- function() {
   write_aggregate(tests[, .(dose_def, family, var, label, delta_entry = round(delta_entry, 5), delta_se_boot = round(delta_se_boot, 5), n_pairs, p_survive = round(p_survive, 4),
                             T1_stat = round(T1_stat, 3), T1_p = signif(T1_p, 4), T1_p_boot = signif(T1_p_boot, 6), T2_stat = round(T2_stat, 3), T2_p = signif(T2_p, 4), T2_p_boot = signif(T2_p_boot, 6),
                             funnel_ratio = round(funnel_ratio, 3), funnel_ratio_supported = round(funnel_ratio_supported, 3), funnel_p = round(funnel_p, 4),
-                            funnel_zero_denom, funnel_sparse_gt1, funnel_ncat, exclude_flag, count_exclude)], "15_tests_items.csv")
+                            funnel_zero_denom, funnel_sparse_gt1, funnel_ncat, funnel_missing_mass = round(funnel_missing_mass, 4), funnel_needed_mass = round(funnel_needed_mass, 4),
+                            funnel_identity_feasible, reach_new = round(reach_new, 4), reach_old_S = round(reach_old_S, 4),
+                            answer_new_given_reach = round(answer_new_given_reach, 4), answer_old_S_given_reach = round(answer_old_S_given_reach, 4),
+                            exclude_flag, count_exclude, nr_routing_flag)], "15_tests_items.csv")
+  write_aggregate(rbindlist(sens_all), "15_routing_sensitivity.csv", exempt = grep("^(n_|aff_|common_)", names(rbindlist(sens_all)), value = TRUE))
   det <- res[class3 != "n/a (no variation)" & !count_exclude, .(n_items = .N, n_affected = sum(class3 == "affected", na.rm = TRUE), n_equivalent = sum(class3 == "equivalent", na.rm = TRUE),
                  n_undetermined = sum(class3 == "undetermined", na.rm = TRUE),
                  median_abs_d = round(median(abs(d_std), na.rm = TRUE), 4), share_positive = round(mean(estimate > 0, na.rm = TRUE), 3)), by = .(dose_def, family, estimator)]
@@ -399,12 +460,22 @@ main <- function() {
                      n_zero_denom_items = sum(funnel_zero_denom > 0),
                      n_zero_denom_categories = sum(funnel_zero_denom),
                      n_flagged_any = sum(funnel_ratio > 1 | funnel_zero_denom > 0, na.rm = TRUE),
+                     ## flags that survive the allocation of the fresh missing mass (identity map infeasible even then)
+                     n_flagged_not_reconcilable = sum((funnel_ratio > 1 | funnel_zero_denom > 0) & funnel_identity_feasible %in% FALSE, na.rm = TRUE),
+                     n_finite_gt1_not_reconcilable = sum(funnel_ratio > 1 & funnel_identity_feasible %in% FALSE, na.rm = TRUE),
+                     n_zero_denom_not_reconcilable = sum(funnel_zero_denom > 0 & funnel_identity_feasible %in% FALSE, na.rm = TRUE),
+                     n_supported_gt1_not_reconcilable = sum(funnel_ratio_supported > 1 & funnel_identity_feasible %in% FALSE, na.rm = TRUE),
+                     median_fresh_missing_mass = round(median(funnel_missing_mass, na.rm = TRUE), 4),
                      min_fresh = MIN_CELL), by = dose_def]
   write_aggregate(mass_sum, "15_mass_diagnostic_summary.csv",
                   exempt = grep("^n_", names(mass_sum), value = TRUE))
   write_aggregate(md[funnel_ratio > 1 | funnel_zero_denom > 0,
                      .(dose_def, var, label, funnel_ncat, funnel_p = round(funnel_p, 4), funnel_ratio = round(funnel_ratio, 3),
-                       funnel_ratio_supported = round(funnel_ratio_supported, 3), funnel_zero_denom, funnel_sparse_gt1)][
+                       funnel_ratio_supported = round(funnel_ratio_supported, 3), funnel_zero_denom, funnel_sparse_gt1,
+                       funnel_missing_mass = round(funnel_missing_mass, 4), funnel_needed_mass = round(funnel_needed_mass, 4), funnel_identity_feasible,
+                       reach_new = round(reach_new, 4), reach_old_S = round(reach_old_S, 4),
+                       answer_new_given_reach = round(answer_new_given_reach, 4), answer_old_S_given_reach = round(answer_old_S_given_reach, 4),
+                       nr_routing_flag)][
                        order(dose_def, -funnel_zero_denom, -funnel_ratio)],
                   "15_mass_diagnostic_flags.csv")
   write_aggregate(arms, "15_arms.csv", exempt = c("B", "seed", "n_ec_items"))

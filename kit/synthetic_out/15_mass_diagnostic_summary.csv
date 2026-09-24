@@ -1,3 +1,3 @@
-"dose_def","n_items_eligible","n_finite_gt1","max_finite_ratio","n_supported_gt1","max_supported_ratio","n_sparse_only_gt1","n_zero_denom_items","n_zero_denom_categories","n_flagged_any","min_fresh"
-"exact",37,1,1.026,1,1.026,0,0,0,1,10
-"any",37,12,1.413,12,1.413,0,0,0,12,10
+"dose_def","n_items_eligible","n_finite_gt1","max_finite_ratio","n_supported_gt1","max_supported_ratio","n_sparse_only_gt1","n_zero_denom_items","n_zero_denom_categories","n_flagged_any","n_flagged_not_reconcilable","n_finite_gt1_not_reconcilable","n_zero_denom_not_reconcilable","n_supported_gt1_not_reconcilable","median_fresh_missing_mass","min_fresh"
+"exact",37,1,1.026,1,1.026,0,0,0,1,0,0,0,0,0.0789,10
+"any",37,12,1.413,12,1.413,0,0,0,12,0,0,0,0,0.0789,10
