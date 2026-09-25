@@ -20,8 +20,8 @@ LTX  = os.path.join(HERE, 'latex')
 
 # --- the two footnotes on the title page -------------------------------------
 ARCHIVE_REPO = 'https://github.com/sokubo/paper-refreshment-designs-replication'
-ARCHIVE_TAG = 'paper-v0.8'
-ARCHIVE_COMMIT = 'd49244a'          # filled in after the release check of the published snapshot
+ARCHIVE_TAG = 'paper-v0.9'
+ARCHIVE_COMMIT = 'COMMIT7'          # filled in after the release check of the published snapshot
 TITLE_THANKS = (
     r"\thanks{This research benefited from discussions and feedback during presentations at "
     r"the Institute of Social Science, University of Tokyo, the Japanese Association for Mathematical "
@@ -37,7 +37,7 @@ AUTHOR_THANKS = (
     r"\thanks{Department of Sociology, Toyo University, Tokyo, Japan. "
     r"Email: okubo080@toyo.jp. Website: sokubo.github.io.}"
 )
-DATE = 'September 24, 2026'
+DATE = 'September 25, 2026'
 KEYWORDS = (r"\noindent\textbf{Keywords:} attrition; panel conditioning; partial identification; "
             r"refreshment samples; rotation panels; survey design")
 # -----------------------------------------------------------------------------

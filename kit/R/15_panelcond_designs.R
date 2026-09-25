@@ -250,7 +250,7 @@ main <- function() {
   ## audit table: every listed item, its codes and labels as read from the file, and where it entered
   audit <- copy(style04)
   audit[, `:=`(w1_var = ec_status$w1_var[match(var_file, ec_status$var)], entry_wave_ok = var_file %in% st_ok[ec_ok == TRUE, var_file])]
-  audit[var_file %in% st_ok[w1_values_ok == FALSE, var_file], reason := paste0(reason, if (nzchar(reason)) "; " else "", "entry-wave values outside 1..k observed: outside the common battery")]
+  audit[var_file %in% st_ok[w1_values_ok == FALSE, var_file], reason := style_join_reason(reason, "entry-wave values outside 1..k observed: outside the common battery")]
   audit[, `:=`(in_main = var_file %in% sets$rating_common$ext, in_main_midpoint = var_file %in% sets$rating_common$mid,
                in_rating_all = var_file %in% sets$rating_all$ext, in_v07_rule = var_file %in% leg)]
   audit[, label := meta$label[match(var_file, meta$var)]]

@@ -16,6 +16,8 @@
 # code check enters no composite; an item that fails only the midpoint check enters the extreme-category
 # composite but not the midpoint composite. 15 writes the outcome for every listed item, with the labels
 # read from the file, to 15_style_items_audit.csv.
+# The list is read strictly: a malformed line, or a k that is not a whole number, stops the run. The unit test is
+# R/15_test_style_items.R.
 # P1_STYLE_ITEMS names another list (the synthetic example uses synthetic/style_items_synthetic.csv).
 # ============================================================
 
@@ -25,14 +27,34 @@ NEUTRAL_PAT <- "どちらともいえない|どちらでもない|ふつう|普�
 read_style_items <- function(file = STYLE_ITEMS_FILE) {
   if (!file.exists(file)) stop("style item list not found: ", file, call. = FALSE)
   ## strict: a malformed line (e.g. an unquoted comma in a note) must stop the run, not truncate the list
+  ## warnings are collected and turned into an error after fread() has returned (stopping inside fread() leaves its
+  ## session open, and the next fread() call then warns about that)
+  warns <- character(0)
   st <- withCallingHandlers(fread(file, encoding = "UTF-8", colClasses = list(character = c("var", "set", "battery", "note"))),
-                            warning = function(w) stop("reading ", file, ": ", conditionMessage(w), call. = FALSE))
+                            warning = function(w) { warns <<- c(warns, conditionMessage(w)); invokeRestart("muffleWarning") })
+  if (length(warns)) stop("reading ", file, ": ", paste(warns, collapse = "; "), call. = FALSE)
   n_lines <- sum(nzchar(trimws(readLines(file, encoding = "UTF-8", warn = FALSE)))) - 1L
   if (nrow(st) != n_lines) stop(sprintf("reading %s: %d rows read but %d data lines in the file", file, nrow(st), n_lines), call. = FALSE)
-  st[, var := toupper(trimws(var))]; st[, k := as.integer(k)]; st[, midpoint := as.logical(midpoint)]
-  stopifnot(!anyDuplicated(st$var), all(st$set %in% c("rating", "frequency")), all(st$k >= 3), all(st$k <= 9),
-            all(!is.na(st$midpoint)), all(!st$midpoint | st$k %% 2L == 1L))
+  st[, var := toupper(trimws(var))]
+  ## k must be a whole number before it is coerced: as.integer() would silently read 5.9 as 5
+  k_num <- suppressWarnings(as.numeric(as.character(st$k)))
+  bad_k <- is.na(k_num) | !is.finite(k_num) | k_num != round(k_num)
+  if (any(bad_k)) stop(sprintf("reading %s: k is not a whole number for %s", file, paste(st$var[bad_k], collapse = ", ")), call. = FALSE)
+  st[, k := as.integer(k_num)]; st[, midpoint := as.logical(midpoint)]
+  fail <- function(what, bad) if (any(bad)) stop(sprintf("reading %s: %s for %s", file, what, paste(unique(st$var[bad]), collapse = ", ")), call. = FALSE)
+  fail("duplicated item", duplicated(st$var) | duplicated(st$var, fromLast = TRUE))
+  fail("set is neither rating nor frequency", !(st$set %in% c("rating", "frequency")))
+  fail("k is outside 3..9", st$k < 3L | st$k > 9L)
+  fail("midpoint is not TRUE or FALSE", is.na(st$midpoint))
+  fail("a midpoint is declared on an even scale", st$midpoint & st$k %% 2L == 0L)
   st
+}
+
+## append an exclusion reason to a vector of reasons (vectorised: any number of items, including none)
+style_join_reason <- function(reason, add) {
+  if (!length(reason)) return(character(0))
+  r <- as.character(reason); r[is.na(r)] <- ""
+  ifelse(nzchar(r), paste0(r, "; ", add), rep_len(add, length(r)))
 }
 
 ## identity of the list actually used (recorded by 04 in the derived file and by 15 in its run record)

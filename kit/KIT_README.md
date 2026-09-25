@@ -33,6 +33,7 @@ export P1_DATA_DIR=<the directory holding the integrated .dta>
 export P1_PROJECT_DIR=<this archive's kit/ directory>
 export P1_INPUT_DTA=<file name of the integrated .dta inside $P1_DATA_DIR/raw>   # one named input
 Rscript R/15_test_mass_ratio.R         # unit test of the mass-domination helper (no data read)
+Rscript R/15_test_style_items.R        # unit test of the response-style helpers (no data read)
 # R/15_style_items.csv lists the rating-scale items of the response-style composites (read by 04 and 15; see §3b)
 Rscript R/04_build_analysis.R          # derives the wave-5 risk set and the item universe
 Rscript R/15_panelcond_designs.R       # the five designs, the diagnostics, the mass-domination ratios
@@ -180,14 +181,20 @@ substantive codes (all labels minus the don't-know, refusal, no-answer and not-a
 `NAP_OVERRIDE` codes of `00_config.R`) must be exactly `1..k`, the observed values must lie in `1..k` (at the entry wave
 too, for the common battery), and a declared midpoint must be an odd `k` whose middle label names a neutral category
 ("どちらともいえない", "ふつう", "変わらない", ...). An item that fails the code check enters no composite; one that fails only the
-midpoint check enters the extreme-category composite only. The list is read strictly (a malformed line stops the run),
+midpoint check enters the extreme-category composite only. The list is read strictly (a malformed line stops the run, and so does a `k` that is not a whole number, such as 5.9,
+which is not read as 5; every such stop names the item),
 and its MD5 is recorded by `04` in the derived file and by `15` in `15_env.txt`; `15` stops if `04` used another list. `04_build_analysis.R`
 computes the composites over all verified rating items (the `rating_all` set); `15_panelcond_designs.R` recomputes
 them, checks that it reproduces `04`, and uses as the **main composites** the *common battery*: the verified rating
 items whose entry-wave counterpart has the same codes, so that the entry-wave and the comparison-wave composites,
 and all five designs, use one item set. `15_style_items_audit.csv` records, for every listed item, its codes and
 labels as read from the file, whether it was verified, its entry-wave counterpart, and which composites it enters;
-it also lists the items that the earlier rule admitted but that are not on the list.
+it also lists the items that the earlier rule admitted but that are not on the list. The unit test
+`R/15_test_style_items.R` (36 checks, no data read) covers the reading of the list, including the malformed lists
+that must stop the run, the verification of codes and midpoint labels, the range check of observed values, the
+person-level shares, and the exclusion reason written to the audit file when zero, one or several items have
+entry-wave values outside `1..k`. (Up to version 0.8, two or more such items stopped `15` with an error while that
+reason was written; the licensed run and the synthetic input have no such item, so no output changed.)
 
 Up to manuscript v0.7 the composites were built from every universe item with four to seven consecutively numbered
 substantive codes, whatever its meaning, which admitted marital status, occupational rank, education and other
@@ -226,4 +233,10 @@ in letter case (among them the cohort identifier `CN`). The releases differ only
 value labels (not the values or variable labels) of 13 variables, none of which this pipeline reads (three
 and two variables of waves 2 and 6, whose only use here is the response markers, and eight of wave 19), and in
 four variables added at wave 19. That record is supplied privately on request; it is the author's own
-frozen re-execution and is **not** third-party reproduction, and the paper says so.
+frozen re-execution and is **not** third-party reproduction, and the paper says so. The run behind Section 10 used
+the versions of `R/15_panelcond_designs.R` and `R/15_style_items.R` in tag `paper-v0.8`. Version 0.9 changes them
+only in how an exclusion reason is appended to the audit table and in how the list is read: a `k` that is not a
+whole number is rejected, a reading problem stops the run after the reader has returned rather than inside it, and
+the other checks of the list stop with a message that names the item (§3b); the licensed run has no item with entry-wave values outside `1..k` and its list has
+whole-number `k`, so neither change alters any output of that run, and the outputs on the synthetic input are
+byte-identical to those of version 0.8.
