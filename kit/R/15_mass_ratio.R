@@ -67,3 +67,53 @@ mass_ratio_item <- function(yo, yn, p, max_cat = 9L, min_fresh = 10L, codebook =
        needed_mass     = nd,
        identity_feasible = feas)
 }
+
+# ------------------------------------------------------------
+# Reach of a question shared by its category indicators (since 2026-09-29; kit v1.1).
+# 04_build_analysis.R attaches the item-nonresponse (M) column of a nominal question to its FIRST indicator only,
+# so that the question's nonresponse is counted once in the B family. The mass diagnostic, however, needs the
+# question's reach (entrants routed to it) for EVERY indicator: before this helper it read the reach from each
+# indicator's own M column, so every indicator but the first had zero reach and was skipped, and which category
+# was examined depended on the order of the codes. mass_reach_source() maps every column to the column that
+# carries its question's M column (the first indicator for the members of a nominal group `qgroup`, the column
+# itself otherwise); mass_diagnostic_columns() computes the diagnostic for every column with that shared reach,
+# so the result does not depend on the order of the categories (unit tests in 15_test_mass_ratio.R).
+# ------------------------------------------------------------
+mass_reach_source <- function(qgroup) {
+  qgroup <- as.character(qgroup); qgroup[is.na(qgroup)] <- ""
+  src <- seq_along(qgroup)
+  for (q in unique(qgroup[nzchar(qgroup)])) { i <- which(qgroup == q); src[i] <- i[1] }
+  src
+}
+
+## Yo, Yn: item matrices (old cohort x items, fresh cohort x items; NA = no substantive answer)
+## Mo, Mn: the item-nonresponse indicator matrices of the same items (NA = did not reach the question)
+## S: survivor indicator of the old cohort (0/1); qgroup: "" for a base item, the question name for its indicators
+mass_diagnostic_columns <- function(Yo, Yn, Mo, Mn, S, qgroup = rep("", ncol(Yo)), min_fresh = 10L, max_cat = 9L) {
+  J <- ncol(Yo); S <- as.integer(S); src <- mass_reach_source(qgroup)
+  IOf <- (S == 1L) & !is.na(Yo)
+  reached_new <- colSums(!is.na(Mn[, src, drop = FALSE]))                 # fresh entrants who reached the question
+  elig_new <- reached_new / nrow(Yn)
+  reach_old_S <- colSums(!is.na(Mo[S == 1L, src, drop = FALSE])) / sum(S)   # survivors who reached the question
+  ans_old_S <- colSums(IOf); ans_new <- colSums(!is.na(Yn)); p_surv <- colMeans(IOf)
+  out <- data.frame(reach_new = NA_real_, reach_old_S = NA_real_, answer_new_given_reach = NA_real_, answer_old_S_given_reach = NA_real_,
+                    funnel_p = NA_real_, funnel_ratio = NA_real_, funnel_ratio_supported = NA_real_, funnel_zero_denom = NA_integer_,
+                    funnel_sparse_gt1 = NA_integer_, funnel_ncat = NA_integer_, funnel_missing_mass = NA_real_, funnel_needed_mass = NA_real_,
+                    funnel_identity_feasible = NA, assessed = FALSE)[rep(1L, J), ]
+  rownames(out) <- NULL
+  for (j in seq_len(J)) {
+    if (!(elig_new[j] > 0)) next
+    out$funnel_p[j] <- p_surv[j] / elig_new[j]
+    out$reach_new[j] <- elig_new[j]; out$reach_old_S[j] <- reach_old_S[j]
+    out$answer_new_given_reach[j] <- ans_new[j] / reached_new[j]
+    out$answer_old_S_given_reach[j] <- if (reach_old_S[j] > 0) ans_old_S[j] / (reach_old_S[j] * sum(S)) else NA_real_
+    mr <- mass_ratio_item(Yo[IOf[, j], j], Yn[!is.na(Yn[, j]), j], out$funnel_p[j], max_cat = max_cat, min_fresh = min_fresh,
+                          n_new_reached = reached_new[j])
+    if (!mr$eligible) next
+    out$assessed[j] <- TRUE
+    out$funnel_ratio[j] <- mr$ratio_finite; out$funnel_ratio_supported[j] <- mr$ratio_supported
+    out$funnel_zero_denom[j] <- mr$n_zero_denom; out$funnel_sparse_gt1[j] <- mr$n_sparse_gt1; out$funnel_ncat[j] <- mr$ncat
+    out$funnel_missing_mass[j] <- mr$missing_mass; out$funnel_needed_mass[j] <- mr$needed_mass; out$funnel_identity_feasible[j] <- mr$identity_feasible
+  }
+  out
+}

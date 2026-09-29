@@ -124,15 +124,17 @@ item specification table, so the public pipeline needs nothing from outside this
 
 ## 3. Where each number in Section 10 comes from
 
-*The table below describes the run behind manuscript v1.0 (the licensed run of 29 September 2026 with the item
-specification table of §3c). The run behind versions 0.5 to 0.10 (24 September 2026) used the inferred universe of 478
-items; its counts are no longer quoted.*
+*The table below describes the run behind manuscript v1.1 (the licensed run of 29 September 2026 with kit v1.1: the
+item specification table of §3c, the mass diagnostic assessing every nominal indicator, and the A+B entry-wave scope;
+scripts `15` and `15b` were repeated on the derived file of the v1.0 run of the same day, whose `04` outputs are
+unchanged). The run behind versions 0.5 to 0.10 (24 September 2026) used the inferred universe of 478 items; its
+counts are no longer quoted.*
 
 `check_manuscript_values_T2.R` performs every comparison below and prints the result. It requires all
-twenty-two aggregate files and run records listed at its top (a missing file stops it), requires every key
+twenty-three aggregate files and run records listed at its top (a missing file stops it), requires every key
 to identify exactly one row, first checks that the run records of scripts 15, 11 and 11b name the
 same input file with the SHA-256 given in §5, and checks that the run record of 15 carries the MD5 of the item
-specification table shipped in `R/`. On 29 September 2026 (JST) it reproduced all 147 quantities from the aggregate outputs of the licensed run, and its self-test detected all thirteen corruptions.
+specification table shipped in `R/`. On 29 September 2026 (JST) it reproduced all 157 quantities from the aggregate outputs of the licensed run with kit v1.1, and its self-test detected all fifteen corruptions.
 
 | Quantity in Section 10 | Output file | Column |
 |---|---|---|
@@ -140,6 +142,7 @@ specification table shipped in `R/`. On 29 September 2026 (JST) it reproduced al
 | 500 bootstrap replications | `15_arms.csv` | `B` |
 | the item universe: 540 wave-5 variables in the table, 53 excluded, 15 nominal questions, 6 derived items; 523 columns = 284 binary + 102 ordered + 41 continuous items + 90 indicators + 6 derived items; no variable outside the table | `R/15_item_scale.csv` (its MD5 in `15_env.txt`); `04_item_meta.csv`; `04_items_unlisted.csv` | `scale`, `construct`; `in_universe`, `spec_scale`, `construct`, `qgroup`; the unlisted file is empty |
 | 320 columns with an entry-wave counterpart; 269 in the main entry-wave analysis (classes A, B, C); 16 of the 320 routing-flagged and 35 class D; in the counts 181 (A + B) + 87 (C) = 268, the 35 class-D columns outside them; admitting class D raises the two entry-wave counts by two each (29 → 31, 23 → 25); the 2007 subgroups of class C | `15_arms.csv`; `15_ec_status.csv`; `15_ec_counts_by_class.csv`; `15_ec_scope_sensitivity.csv` | `n_ec_items`, `n_ec_items_main`; `ec_ok`, `ec_class`, `ec_main`, `ec_subgroup`; `n_items` by `cls`; `n_affected` by `scope` |
+| the A+B scope (§3c, the class-C bridge): over the 181 columns of classes A and B alone, with the Benjamini–Hochberg families recomputed within them, the entry-wave correction flags 28 and its standardised version 19 (the class-C columns contribute 5 and 4 of the 29 and 23 of the main analysis); $\mathcal{T}_{\mathrm{NS}}$ rejects for 24 of the 181 (13.3%) against 39 of 268 (14.6%) | `15_ec_scope_sensitivity.csv`; `15_ec_counts_by_class.csv`; `15_ec_ab_items.csv` | scope `A+B (same question at entry)`: `n_items`, `n_affected`, `n_T1_tests`, `n_T1_reject`; `n_affected_ab_q` by `cls`; per item `q_main`, `q_ab`, `class3_main`, `class3_ab` |
 | 33 columns outside every count: 31 flagged as potentially incomparable because of differential item nonresponse or routing (04's flag: item-nonresponse gap above 15 points), one follow-up of a flagged question (DQ46Y), and one sensitivity variant (`dq57d_hr_s12`, `in_counts = FALSE`). The flag is a screening rule; the questionnaire filters have not been verified | `15_designs_items.csv` | `exclude_flag` (= not `in_counts`), `nr_routing_flag`, `routing_followup`, `count_exclude` (= any of the three, or, for `ec` and `ec_adj`, outside the main entry-wave analysis) |
 | the same counts with the flag recomputed at gap thresholds of 10 and 20 points (identical flagged set and counts) and with no routing exclusion (522 columns; 31 / 21 / 14 / 29 / 23; the same three items flagged by all five designs) | `15_routing_sensitivity.csv` | one row per threshold: `n_routing`, `n_followup`, `n_items_*`, `aff_*`, `common_*`, `n_all5`, `all5_items`; `n_disagree_with_04` (= 0: the gap recomputed in 15 at .15 reproduces 04's flag) |
 | 490 columns for which a mean contrast is meaningful; 489 for the matched designs (one item without variation in the matched arms); 268 in the entry-wave counts | `15_detection_counts.csv` | `n_items` by `estimator` |
@@ -152,9 +155,9 @@ specification table shipped in `R/`. On 29 September 2026 (JST) it reproduced al
 | extreme-category and midpoint margins over the five designs (common battery) | `15_designs_items.csv` | `d_std` for `pdq_ext_share`, `pdq_mid_share`, family `P_style` |
 | the same margins under other item sets: all rating items (same-wave designs), rating and frequency scales, the bipolar five-point scales only, and the rule used up to v0.7 (every item with four to seven consecutively numbered codes) as run on the present universe and on the common battery | `15_style_sensitivity.csv` | `battery`, `indicator`, `estimator`, `n_items_w5`, `n_items_w1`, `d_std`; the `rating_common (main)` rows repeat the item-file values; the `v07_asrun` rows are the earlier rule applied to the v1.0 universe (a fall of .21 to .26 and a rise of .20 to .22; on the v0.9 universe the rule gave .21 to .25 and .19 to .21) |
 | employment: continuing respondents more often employed by 4.9 points, flagged by the entry-wave correction (q = .03) and survival matching (q = .05), not standardised (q = .14) or naive (q = .38) | `15_designs_items.csv`; `04_item_meta.csv` | `DQ02`, `estimate`, `q` and `class3` for `naive`, `sm`, `ec`, `ec_adj` (BH families: the columns that enter the counts, per estimator). `DQ02` keeps its raw codes, 1 = working and 2 = not working, so the estimate −.049 is a lower not-working share among continuing respondents; the checker confirms the coding from the reach rate of the follow-up `DQ02_2`, which only those not working are asked |
-| mass-domination diagnostic: items with two to nine observed categories; items and categories with a positive/zero category; finite exceedances; exceedances in categories with at least ten fresh entrants; exceedances only in sparser categories; the two maxima | `15_mass_diagnostic_summary.csv` | `n_items_eligible`, `n_zero_denom_items`, `n_zero_denom_categories`, `n_finite_gt1`, `n_supported_gt1`, `n_sparse_only_gt1`, `max_finite_ratio`, `max_supported_ratio` (exact dose) |
-| fresh item nonresponse: all 18 flags (10 positive/zero columns, one category each, 9 of them asked only of a subgroup; 8 finite exceedances) are reconcilable by the fresh missing mass; median missing mass .018 over the 410 eligible columns; largest needed mass .0065; reach rates differ by 9.1 points at most (the owner-occupied-housing follow-ups DQ39_A–E), the unmarried block (DQ50 and its follow-ups) next | `15_mass_diagnostic_summary.csv`; `15_mass_diagnostic_flags.csv`; `15_tests_items.csv` | `n_flagged_not_reconcilable`, `n_finite_gt1_not_reconcilable`, `n_zero_denom_not_reconcilable`, `n_supported_gt1_not_reconcilable`, `median_fresh_missing_mass` |
-| the flagged columns themselves: the two largest finite ratios, both rare events exceeding one only in sparse categories (mother died in the past year, `DQ09_D`, 1.369; expects to have taken over the family business in ten years, `DQ56_C`, 1.270); the two supported exceedances (`DQ45A`, 1.192; `DQ08B_4`, 1.020); the six positive/zero columns on how a respondent with a partner met that person (`DQ54_2*`) and the two with a routing flag (`DQ49_2P`, `DQ49_2Z`); per column, the fresh missing mass `r_M`, the mass needed to cover the stayers under the identity map, and whether the map remains feasible; the reach and answer shares of both arms | `15_mass_diagnostic_flags.csv` | one row per item: `funnel_p` (retention for the item's own population: survivors who answered, as a share of the cohort, divided by the share of fresh entrants who reached the question), `funnel_ratio`, `funnel_ratio_supported`, `funnel_zero_denom`, `funnel_sparse_gt1` |
+| mass-domination diagnostic (every one of the 90 nominal indicators assessed with its question's reach, §3a): 485 eligible columns; 10 columns with a positive/zero category, one each, none an indicator; 11 finite exceedances, 9 of them only in sparse categories; 2 exceedances in supported categories; the two maxima | `15_mass_diagnostic_summary.csv` | `n_items_eligible`, `n_zero_denom_items`, `n_zero_denom_categories`, `n_finite_gt1`, `n_supported_gt1`, `n_sparse_only_gt1`, `max_finite_ratio`, `max_supported_ratio` (exact dose) |
+| fresh item nonresponse: all 21 flags (10 positive/zero columns, one category each, 9 of them asked only of a subgroup; 11 finite exceedances) are reconcilable by the fresh missing mass; median missing mass .018 over the 485 eligible columns; largest needed mass .0065; reach rates differ by 9.1 points at most (the owner-occupied-housing follow-ups DQ39_A–E), the unmarried block (DQ50 and its follow-ups) next | `15_mass_diagnostic_summary.csv`; `15_mass_diagnostic_flags.csv`; `15_tests_items.csv` | `n_flagged_not_reconcilable`, `n_finite_gt1_not_reconcilable`, `n_zero_denom_not_reconcilable`, `n_supported_gt1_not_reconcilable`, `median_fresh_missing_mass` |
+| the flagged columns themselves: the four largest finite ratios, all exceeding one only in sparse categories (support for one minor party, `DQ30__6`, 1.955; a spouse working as a family employee, `DQ44_1__5`, 1.581; mother died in the past year, `DQ09_D`, 1.369; expects to have taken over the family business in ten years, `DQ56_C`, 1.270); the two supported exceedances (`DQ45A`, 1.192; `DQ08B_4`, 1.020); the six positive/zero columns on how a respondent with a partner met that person (`DQ54_2*`) and the two with a routing flag (`DQ49_2P`, `DQ49_2Z`); per column, the fresh missing mass `r_M`, the mass needed to cover the stayers under the identity map, and whether the map remains feasible; the reach and answer shares of both arms | `15_mass_diagnostic_flags.csv` | one row per item: `funnel_p` (retention for the item's own population: survivors who answered, as a share of the cohort, divided by the share of fresh entrants who reached the question), `funnel_ratio`, `funnel_ratio_supported`, `funnel_zero_denom`, `funnel_sparse_gt1` |
 | 23 negative-control items; median \|d\| .033; 1 rejection; 9 equivalences; pooled −.035 (independence SE .0095) | `11_negcontrol_w13_summary.csv` | all columns |
 | person-level bootstrap SE .0186 (2.0 times the independence SE; design effect 3.84); 95% interval [−.072, .001]; −.028 (SE .0185) without the rejected item | `11b_negcontrol_w13_pooled.csv` | `se_person_bootstrap`, `design_effect`, `ci95_lo`, `ci95_hi`; the row with the BH-rejected item dropped |
 | mean correlation .116 between item contrasts across replications | `11b_negcontrol_w13_corr.csv` | `mean_offdiag_corr` |
@@ -181,6 +184,18 @@ identity map with that mass allocated freely: `funnel_needed_mass` = Σ_a max{l_
 (`reach_new`, `reach_old_S`, `answer_new_given_reach`, `answer_old_S_given_reach`) are written for every flagged item
 and for every item in `15_tests_items.csv`. These are population compatibility calculations on complete-case
 shares, not calibrated tests; the paper reports the ratios as descriptive diagnostics.
+
+**Nominal indicators (kit v1.1, 29 September 2026).** `04` attaches the item-nonresponse
+column of a nominal question to its first indicator only, so that the question's nonresponse enters the B family once.
+Until v1.0 the mass diagnostic read each indicator's reach from the indicator's own nonresponse column, so every
+indicator but the first of a question had zero reach and was skipped: of a question's categories only the first was
+assessed, and which one that was depended on the order of the codes. Since v1.1 the reach of a question is shared by
+all its indicators (`mass_reach_source()` and `mass_diagnostic_columns()` in `R/15_mass_ratio.R`), every eligible
+indicator is assessed, and `15_panelcond_designs.R` prints how many nominal indicators were assessed. The unit test
+`R/15_test_mass_ratio.R` (39 checks) includes a three-category example (retention .8, stayer probabilities .5/.4/.1 and
+fresh probabilities .5/0/.5 over three categories: the second category is a positive/zero flag whichever category
+comes first), the previous rule for contrast, and the invariance of the assessed set, ratios and flags under
+permutations of the categories.
 
 ### 3b. The response-style composites and their item set
 
@@ -264,6 +279,21 @@ the table are applied to the 2007 variable before its label set is compared with
 lists every universe item with its counterpart, class and subgroup, and `15_ec_unavailable.csv` the reason where no
 entry-wave term exists. The former `R/15_item_exclude.csv` is superseded by `in_counts`.
 
+**The class-C bridge (kit v1.1, 29 September 2026).** For a class-C item the entry-wave
+term is the selection difference within the 2007 subgroup $G_e$ among survivors who also give a substantive answer at
+the comparison wave, $\mathbb{E}[Y_e \mid S, R_t, G_e] - \mathbb{E}[Y_e \mid G_e]$ (the survivor means of every item are
+those of survivors with a substantive answer at $t$), whereas the bias that the correction removes from the
+comparison-wave contrast is the selection difference within the current subgroup $G_t$,
+$\mathbb{E}[Y^{*}_t \mid S, R_t, G_t] - \mathbb{E}[Y^{*}_t \mid G_t]$. The correction identifies the survivors' mean shift
+only if the two differences are equal, a transport of the selection bias across two subgroups whose memberships
+differ (a person who marries between the waves contributes to the second mean and not to the first); B4 within one
+fixed population does not imply it, and matching wording and coding do not establish it. The main analysis keeps the
+class-C items under that stated restriction, and `15_ec_scope_sensitivity.csv` now carries a third scope, `A+B (same
+question at entry)`, with the Benjamini--Hochberg families recomputed within classes A and B alone (`n_affected`,
+`n_equivalent`) and the $\mathcal{T}_{\mathrm{NS}}$ rejections counted within each scope (`n_T1_tests`, `n_T1_reject`);
+`15_ec_ab_items.csv` lists, item by item, the status under the main family and under the A+B family, and
+`15_ec_counts_by_class.csv` adds `n_affected_ab_q`.
+
 The label sets of the 2007 and 2011 sides were compared code by code on 29 September 2026 against the provider's
 value-label file (metadata only) and both questionnaires, for all 254 entry-wave pairs of the licensed run. Three
 substantive differences were found and are handled in the tables: party identification (`DQ30`) has a different party
@@ -312,9 +342,13 @@ classes). The licensed run was repeated on 29 September 2026 (JST) with these sc
 `15_panelcond_designs.R` v1.0, `15b_item_flags.R`; R 4.6.0 on macOS, `panelcond` 0.1.2, `data.table` 1.18.4, `haven`
 2.5.5; 500 bootstrap replications, seed 20260915; about 15 minutes) on the same input file, with the item
 specification table of MD5 `5b056b5a425c4d471cda9e0f8e8b8f13` and the style-item list of MD5
-`19c5597ee76037603652da37de5ce037`, both recorded in `15_env.txt`, and its aggregate outputs are the run behind
-Section 10 of manuscript v1.0 and tag `paper-v1.0`; `check_manuscript_values_T2.R` reproduced all 147 quoted
-quantities from them. The 2019-episode battery (scripts 11 and 11b) was not repeated: it does not read the item
+`19c5597ee76037603652da37de5ce037`, both recorded in `15_env.txt`. Scripts `15_panelcond_designs.R` (v1.1) and
+`15b_item_flags.R` were then repeated on the same derived file, later the same day, with the corrections of kit
+v1.1 (the mass diagnostic assessing every nominal indicator with its question's reach; the A+B entry-wave scope;
+`04`'s outputs unchanged, the estimates, q-values and classifications of every column unchanged); the aggregate outputs
+of that repetition are the run behind Section 10 of manuscript v1.1 and tag `paper-v1.1`, and
+`check_manuscript_values_T2.R` reproduced all 157 quoted quantities from them (the run behind v1.0, tag `paper-v1.0`,
+differs from it only in the mass-diagnostic columns and the scope files). The 2019-episode battery (scripts 11 and 11b) was not repeated: it does not read the item
 specification table, and its run records name the same input. The frozen run of 24 September 2026 (478 items, the run
 behind versions 0.5 to 0.10) is superseded; its outputs are kept by the author but are no longer quoted. The synthetic
 input was regenerated with the items that exercise the new rules (its SHA-256 in the archive README changes

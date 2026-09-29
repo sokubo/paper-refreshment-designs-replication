@@ -29,6 +29,7 @@ kit/synthetic_out/15_arms.csv
 kit/synthetic_out/15_designs_items.csv
 kit/synthetic_out/15_detection_counts.csv
 kit/synthetic_out/15_diagnostics_summary.csv
+kit/synthetic_out/15_ec_ab_items.csv
 kit/synthetic_out/15_ec_counts_by_class.csv
 kit/synthetic_out/15_ec_scope_sensitivity.csv
 kit/synthetic_out/15_ec_status.csv

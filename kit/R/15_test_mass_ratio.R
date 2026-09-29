@@ -86,5 +86,46 @@ expect("positive/zero, missing 2/82 < needed .05: not reconcilable", c(round(m$m
 ## 11. n_new_reached not supplied: the allocation fields are NA and everything else unchanged
 m0 <- mass_ratio_item(yo, yn, .5); expect("no reach count: allocation fields NA", c(is.na(m0$missing_mass), is.na(m0$needed_mass), is.na(m0$identity_feasible)), c(TRUE, TRUE, TRUE))
 
+## 12. shared reach of a nominal question (kit v1.1, 2026-09-29). A nominal question with categories A, B, C is
+##     represented by three 0/1 indicators; 04 attaches its item-nonresponse (M) column to the FIRST indicator only.
+##     The diagnostic must assess every indicator with the question's reach, and its scope and findings must not depend
+##     on the order of the categories. Example: retention .8, stayer probabilities (.5, .4, .1), fresh
+##     probabilities (.5, 0, .5), complete response: the B indicator has a positive/zero category (stayers report B,
+##     no fresh entrant does) and the identity map is not compatible with it.
+build_nominal <- function(order) {                     # order: permutation of the three categories in the columns
+  n_old <- 1000L; n_new <- 200L
+  S <- rep(c(1L, 0L), c(800L, 200L))                     # retention .8, independent of the answer
+  ans_old <- c(rep(c(1L, 2L, 3L), c(400L, 320L, 80L)), rep(c(1L, 2L, 3L), c(100L, 80L, 20L)))   # survivors: (.5, .4, .1); attriters likewise
+  ans_new <- rep(c(1L, 3L), c(100L, 100L))              # fresh: (.5, 0, .5)
+  Yo <- sapply(order, function(k) as.numeric(ans_old == k)); Yn <- sapply(order, function(k) as.numeric(ans_new == k))
+  Mo <- matrix(NA_real_, n_old, 3); Mn <- matrix(NA_real_, n_new, 3)
+  Mo[, 1] <- 0; Mn[, 1] <- 0                            # everyone reached the question and answered: M = 0 on the first indicator only
+  list(Yo = Yo, Yn = Yn, Mo = Mo, Mn = Mn, S = S, qgroup = rep("Q", 3), order = order)
+}
+d <- build_nominal(c(1L, 2L, 3L))
+r <- mass_diagnostic_columns(d$Yo, d$Yn, d$Mo, d$Mn, d$S, d$qgroup)
+expect("shared reach: every indicator of the question is assessed", r$assessed, c(TRUE, TRUE, TRUE))
+expect("shared reach: the same reach and retention for every indicator", c(r$reach_new, r$funnel_p), c(1, 1, 1, .8, .8, .8), 1e-9)
+expect("shared reach: category B (no fresh entrant) is flagged positive/zero and not reconcilable", c(r$funnel_zero_denom[2], r$funnel_identity_feasible[2]), c(1L, FALSE))
+expect("shared reach: A has ratio .8 (no flag); C exceeds one in its complement category (.8 * .9 / .5 = 1.44)", c(r$funnel_ratio[1], r$funnel_ratio[3], r$funnel_zero_denom[1], r$funnel_zero_denom[3]), c(.8, 1.44, 0L, 0L), 1e-9)
+## the rule before 2026-09-29 read each indicator's own M column: only the first indicator was assessed, so the
+## finding depended on which category came first (A first: nothing flagged; B first: the flag appears)
+own <- function(d) mass_diagnostic_columns(d$Yo, d$Yn, d$Mo, d$Mn, d$S, qgroup = rep("", 3))
+expect("previous rule (own M column): only the first indicator assessed", own(d)$assessed, c(TRUE, FALSE, FALSE))
+expect("previous rule: with A first no flag appears", own(d)$funnel_zero_denom[1], 0L)
+expect("previous rule: with B first the flag appears (order-dependent)", own(build_nominal(c(2L, 1L, 3L)))$funnel_zero_denom[1], 1L)
+## permutation invariance of the corrected rule: the results travel with the categories
+r2 <- mass_diagnostic_columns(d$Yo, d$Yn, d$Mo, d$Mn, d$S, d$qgroup)   # baseline again
+for (perm in list(c(2L, 1L, 3L), c(3L, 2L, 1L), c(3L, 1L, 2L))) {
+  dp <- build_nominal(perm); rp_ <- mass_diagnostic_columns(dp$Yo, dp$Yn, dp$Mo, dp$Mn, dp$S, dp$qgroup)
+  expect(sprintf("permutation %s: assessed set, ratios and flags identical up to the permutation", paste(perm, collapse = "")),
+         c(rp_$assessed, rp_$funnel_ratio, rp_$funnel_zero_denom, as.numeric(rp_$funnel_identity_feasible)),
+         c(r2$assessed[perm], r2$funnel_ratio[perm], r2$funnel_zero_denom[perm], as.numeric(r2$funnel_identity_feasible[perm])), 1e-9)
+}
+## a base item (no group) keeps its own reach; a question nobody reached is skipped
+expect("reach source: base items map to themselves, indicators to the first of their group", mass_reach_source(c("", "Q", "Q", "", "R", "R", "R")), c(1L, 2L, 2L, 4L, 5L, 5L, 5L))
+d0 <- d; d0$Mn[] <- NA_real_
+expect("no fresh entrant reached the question: nothing assessed", mass_diagnostic_columns(d0$Yo, d0$Yn, d0$Mo, d0$Mn, d0$S, d0$qgroup)$assessed, c(FALSE, FALSE, FALSE))
+
 cat(sprintf("\n%d checks: %d ok, %d failed\n", ok + bad, ok, bad))
 if (bad > 0L) quit(status = 1L)

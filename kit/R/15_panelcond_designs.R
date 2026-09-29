@@ -20,6 +20,10 @@
 #   親設問の w1 変数から同じコードの指標を作り、派生項目(時刻・交際期間)は w1 の構成要素から同じ規則で作る。区分 C の項目は
 #   入所波の差 δ を 2007 年の該当者(15_entry_subgroups.csv)の中で計算する。区分 D の項目(と区分のない項目)は EC の主分析
 #   (件数)から外し、感度(15_ec_scope_sensitivity.csv)にだけ入れる。
+#   v1.1 (2026-09-29; 第 7 ラウンド): (M2) 質量診断の到達(reach)を名義設問の指標間で共有する(15_mass_ratio.R の
+#   mass_diagnostic_columns(); 以前は最初の指標しか評価されなかった)。(M3) 区分 C の項目の入所波の項は、2007 年の該当者の中の
+#   「比較波に回答した生存者」の差なので、比較波の(現在の該当者の中の)選抜の差と等しいという橋渡しの仮定が要る。A+B だけの
+#   scope を 15_ec_scope_sensitivity.csv に加え(BH は A+B 内で再計算、T_NS の棄却数つき)、項目別に 15_ec_ab_items.csv を書く。
 # 出力(すべて集計値、N<10 抑制): 15_designs_items.csv / 15_tests_items.csv / 15_detection_counts.csv /
 #   15_diagnostics_summary.csv / 15_mass_diagnostic_summary.csv / 15_mass_diagnostic_flags.csv / 15_routing_sensitivity.csv /
 #   15_style_sensitivity.csv / 15_style_items_audit.csv / 15_core32.csv /
@@ -443,27 +447,22 @@ main <- function() {
     ## (disclosure-safe shares), and the identity map is also evaluated with the fresh missing mass allocated
     ## freely (mass_ratio_item(): needed_mass <= missing_mass). The observed reach rate stands in for eligibility;
     ## a true item nonresponse recorded as NA rather than with a no-answer code cannot be told from routing (04).
-    reached_new <- colSums(!is.na(Yn[, J + seq_len(J), drop = FALSE]))
-    elig_new <- reached_new / n_new
-    reach_old_S  <- colSums(!is.na(Yo[S == 1L, J + seq_len(J), drop = FALSE])) / sum(S)          # survivors who reached the item
-    ans_old_S    <- colSums(IOf[, seq_len(J), drop = FALSE])                                        # survivors who answered
-    ans_new      <- colSums(!is.na(Yn[, seq_len(J), drop = FALSE]))                                 # fresh entrants who answered
-    funnel <- funnel_sup <- p_item <- rep(NA_real_, JJ); funnel_zd <- funnel_sp <- funnel_ncat <- rep(NA_integer_, JJ)
-    funnel_miss <- funnel_need <- rep(NA_real_, JJ); funnel_feas <- rep(NA, JJ)
-    reach_new_v <- reach_oldS_v <- ans_new_v <- ans_oldS_v <- rep(NA_real_, JJ)
-    for (j in seq_len(J)) {                                          # A 族の離散項目のみ
-      if (!(elig_new[j] > 0)) next
-      p_item[j] <- full$p_surv[j] / elig_new[j]
-      reach_new_v[j] <- elig_new[j]; reach_oldS_v[j] <- reach_old_S[j]
-      ans_new_v[j] <- ans_new[j] / reached_new[j]
-      ans_oldS_v[j] <- if (reach_old_S[j] > 0) ans_old_S[j] / (reach_old_S[j] * sum(S)) else NA_real_
-      mr <- mass_ratio_item(Yo[IOf[, j], j], Yn[!is.na(Yn[, j]), j], p_item[j], max_cat = 9L, min_fresh = MIN_CELL,
-                            n_new_reached = reached_new[j])
-      if (!mr$eligible) next
-      funnel[j] <- mr$ratio_finite; funnel_sup[j] <- mr$ratio_supported
-      funnel_zd[j] <- mr$n_zero_denom; funnel_sp[j] <- mr$n_sparse_gt1; funnel_ncat[j] <- mr$ncat
-      funnel_miss[j] <- mr$missing_mass; funnel_need[j] <- mr$needed_mass; funnel_feas[j] <- mr$identity_feasible
-    }
+    ## Nominal indicators (since 2026-09-29, kit v1.1): 04 attaches a question's M column to its first
+    ## indicator only (the B family counts the question's nonresponse once), so the reach of every indicator is read
+    ## from that shared column (mass_reach_source(); 15_mass_ratio.R). Before, each indicator read its own M column,
+    ## so only the first category of a nominal question was assessed and the result depended on the order of the codes.
+    Mo_A <- Yo[, J + seq_len(J), drop = FALSE]; Mn_A <- Yn[, J + seq_len(J), drop = FALSE]
+    qg <- if (!is.null(meta$qgroup)) meta$qgroup else rep("", J); qg[is.na(qg)] <- ""
+    mdc <- mass_diagnostic_columns(Yo[, seq_len(J), drop = FALSE], Yn[, seq_len(J), drop = FALSE], Mo_A, Mn_A, S, qgroup = qg, min_fresh = MIN_CELL, max_cat = 9L)
+    stopifnot(isTRUE(all.equal(unname(mdc$funnel_p[mdc$assessed]), unname((full$p_surv[seq_len(J)] / mdc$reach_new)[mdc$assessed]))))   # the same p as the engine's survival share
+    n_ind <- sum(nzchar(qg)); n_ind_assessed <- sum(nzchar(qg) & mdc$assessed)
+    cat("diag: 質量診断: 評価した列", sum(mdc$assessed), "/", J, "(名義の指標", n_ind_assessed, "/", n_ind, "; 設問の到達を指標間で共有)\n")
+    pad <- function(x, fill) c(x, rep(fill, JJ - J))
+    funnel <- pad(mdc$funnel_ratio, NA_real_); funnel_sup <- pad(mdc$funnel_ratio_supported, NA_real_); p_item <- pad(mdc$funnel_p, NA_real_)
+    funnel_zd <- pad(mdc$funnel_zero_denom, NA_integer_); funnel_sp <- pad(mdc$funnel_sparse_gt1, NA_integer_); funnel_ncat <- pad(mdc$funnel_ncat, NA_integer_)
+    funnel_miss <- pad(mdc$funnel_missing_mass, NA_real_); funnel_need <- pad(mdc$funnel_needed_mass, NA_real_); funnel_feas <- pad(mdc$funnel_identity_feasible, NA)
+    reach_new_v <- pad(mdc$reach_new, NA_real_); reach_oldS_v <- pad(mdc$reach_old_S, NA_real_)
+    ans_new_v <- pad(mdc$answer_new_given_reach, NA_real_); ans_oldS_v <- pad(mdc$answer_old_S_given_reach, NA_real_)
     ## (e) 表の組み立て
     pc[, `:=`(dose_def = dose_def)]
     pc[, se_boot := se_boot[cbind(match(col, cols), match(estimator, keys))]]
@@ -605,15 +604,32 @@ main <- function() {
                  median_abs_d = round(median(abs(d_std), na.rm = TRUE), 4), share_positive = round(mean(estimate > 0, na.rm = TRUE), 3)), by = .(dose_def, family, estimator)]
   write_aggregate(det, "15_detection_counts.csv", exempt = c("n_items", "n_affected", "n_equivalent", "n_undetermined"))
   ## entry-wave scope (v1.0): the main analysis counts classes A, B and C; the sensitivity adds class D and unclassified
-  ## items with an entry wave. Counts by class and for the two scopes, substantive items only.
+  ## items with an entry wave, and (since 2026-09-29, kit v1.1) also RESTRICTS the family to classes A
+  ## and B: for a class-C item the entry-wave term is the selection difference within the 2007 subgroup among
+  ## survivors who answer at the comparison wave, and removing it from the comparison-wave contrast, which is taken
+  ## within the current subgroup, requires that the two differences be equal (a transport of the selection bias across
+  ## the two subgroups; B4 within a fixed population does not imply it). The A+B scope reports the entry-wave counts
+  ## and the T_NS rejections without that restriction. Counts by class and for the three scopes, substantive items only.
   ecs <- res[family == "A_substantive" & estimator %in% c("ec", "ec_adj") & class3 != "n/a (no variation)" & count_exclude0 == FALSE]
   ecs[, cls := fifelse(is.na(ec_class) | !nzchar(ec_class), "(none)", ec_class)]
   ecs[, q_all := p.adjust(p, "BH"), by = .(dose_def, estimator)]
-  scope <- rbind(ecs[ec_main == TRUE, .(scope = "main (A+B+C)", n_items = .N, n_affected = sum(class3 == "affected", na.rm = TRUE)), by = .(dose_def, estimator)],
-                 ecs[, .(scope = "all entry-wave items", n_items = .N, n_affected = sum(q_all < Q_CUT, na.rm = TRUE)), by = .(dose_def, estimator)])
-  write_aggregate(scope[order(dose_def, estimator, scope)], "15_ec_scope_sensitivity.csv", exempt = c("n_items", "n_affected"))
-  write_aggregate(ecs[, .(n_items = .N, n_affected_main_q = sum(ec_main & class3 == "affected", na.rm = TRUE), n_affected_all_q = sum(q_all < Q_CUT, na.rm = TRUE)), by = .(dose_def, estimator, cls)][order(dose_def, estimator, cls)],
-                  "15_ec_counts_by_class.csv", exempt = c("n_items", "n_affected_main_q", "n_affected_all_q"))
+  ecs[, q_ab := NA_real_]; ecs[ec_main == TRUE & cls %in% c("A", "B"), q_ab := p.adjust(p, "BH"), by = .(dose_def, estimator)]
+  ecs[, q_ab_tost := NA_real_]; ecs[ec_main == TRUE & cls %in% c("A", "B"), q_ab_tost := p.adjust(p_tost, "BH"), by = .(dose_def, estimator)]
+  ## T_NS = SM - EC (the diagnostic of Section 8) counted within each scope: it exists only where the entry wave does
+  t1 <- tests[family == "A_substantive" & count_exclude == FALSE & !is.na(T1_p_boot), .(dose_def, var, T1_p_boot, ec_class, ec_main)]
+  t1[, cls := fifelse(is.na(ec_class) | !nzchar(ec_class), "(none)", ec_class)]
+  t1_of <- function(sel) t1[sel, .(n_T1_tests = .N, n_T1_reject = sum(T1_p_boot < .05, na.rm = TRUE)), by = dose_def]
+  t1_main <- t1_of(t1$ec_main == TRUE); t1_ab <- t1_of(t1$ec_main == TRUE & t1$cls %in% c("A", "B")); t1_all <- t1_of(rep(TRUE, nrow(t1)))
+  scope <- rbind(merge(ecs[ec_main == TRUE, .(scope = "main (A+B+C)", n_items = .N, n_affected = sum(class3 == "affected", na.rm = TRUE), n_equivalent = sum(class3 == "equivalent", na.rm = TRUE)), by = .(dose_def, estimator)], t1_main, by = "dose_def"),
+                 merge(ecs[ec_main == TRUE & cls %in% c("A", "B"), .(scope = "A+B (same question at entry)", n_items = .N, n_affected = sum(q_ab < Q_CUT, na.rm = TRUE), n_equivalent = sum(q_ab >= Q_CUT & q_ab_tost < Q_CUT, na.rm = TRUE)), by = .(dose_def, estimator)], t1_ab, by = "dose_def"),
+                 merge(ecs[, .(scope = "all entry-wave items", n_items = .N, n_affected = sum(q_all < Q_CUT, na.rm = TRUE), n_equivalent = NA_integer_), by = .(dose_def, estimator)], t1_all, by = "dose_def"))
+  write_aggregate(scope[order(dose_def, estimator, scope)], "15_ec_scope_sensitivity.csv", exempt = c("n_items", "n_affected", "n_equivalent", "n_T1_tests", "n_T1_reject"))
+  ## the A+B scope, item by item (which items change status when the family is restricted)
+  write_aggregate(ecs[ec_main == TRUE & cls %in% c("A", "B"), .(dose_def, var, label, estimator, estimate = round(estimate, 5), se_boot = round(se_boot, 5), q_main = signif(q, 4), q_ab = signif(q_ab, 4),
+                       class3_main = class3, class3_ab = fifelse(q_ab < Q_CUT, "affected", fifelse(q_ab_tost < Q_CUT, "equivalent", "undetermined")), ec_class)][order(dose_def, estimator, var)],
+                  "15_ec_ab_items.csv")
+  write_aggregate(ecs[, .(n_items = .N, n_affected_main_q = sum(ec_main & class3 == "affected", na.rm = TRUE), n_affected_ab_q = sum(q_ab < Q_CUT, na.rm = TRUE), n_affected_all_q = sum(q_all < Q_CUT, na.rm = TRUE)), by = .(dose_def, estimator, cls)][order(dose_def, estimator, cls)],
+                  "15_ec_counts_by_class.csv", exempt = c("n_items", "n_affected_main_q", "n_affected_ab_q", "n_affected_all_q"))
   ## the diagnostics are contrasts of means: the same items as in the detection counts; n_T1/n_T2 are the numbers
   ## of items on which each statistic exists (T1 = SM - EC needs the entry-wave arm)
   tests[ec_main == FALSE, `:=`(T1_p_boot = NA_real_, d1 = NA_real_)]      # T1 = SM - EC is a main-analysis diagnostic only for class A/B/C items

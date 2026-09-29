@@ -1,9 +1,13 @@
-"dose_def","estimator","scope","n_items","n_affected"
-"any","ec","all entry-wave items",77,5
-"any","ec","main (A+B+C)",76,4
-"any","ec_adj","all entry-wave items",77,5
-"any","ec_adj","main (A+B+C)",76,4
-"exact","ec","all entry-wave items",77,5
-"exact","ec","main (A+B+C)",76,4
-"exact","ec_adj","all entry-wave items",77,5
-"exact","ec_adj","main (A+B+C)",76,4
+"dose_def","estimator","scope","n_items","n_affected","n_equivalent","n_T1_tests","n_T1_reject"
+"any","ec","A+B (same question at entry)",57,4,30,57,32
+"any","ec","all entry-wave items",77,5,NA,77,33
+"any","ec","main (A+B+C)",76,4,28,76,32
+"any","ec_adj","A+B (same question at entry)",57,4,30,57,32
+"any","ec_adj","all entry-wave items",77,5,NA,77,33
+"any","ec_adj","main (A+B+C)",76,4,28,76,32
+"exact","ec","A+B (same question at entry)",57,4,16,57,1
+"exact","ec","all entry-wave items",77,5,NA,77,3
+"exact","ec","main (A+B+C)",76,4,19,76,3
+"exact","ec_adj","A+B (same question at entry)",57,4,16,57,1
+"exact","ec_adj","all entry-wave items",77,5,NA,77,3
+"exact","ec_adj","main (A+B+C)",76,4,20,76,3

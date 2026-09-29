@@ -126,6 +126,8 @@ main <- function() {
       for (j in seq_along(codes)) {
         nm <- colnames(ind)[j]
         ## the item-nonresponse and don't-know indicators of the question are attached to its first indicator only
+        ## (the B family counts the question once; the mass diagnostic of 15 reads the question's reach from that
+        ## column for EVERY indicator: mass_reach_source() in 15_mass_ratio.R, since 2026-09-29)
         add_cand(nm, paste0(lab, ": ", labs[j]), ind[, j], if (j == 1L) base else rep(FALSE, length(base)), sc, "binary", 2L, c(0, 1), c("0", "1"), qgroup = v, parent = v, spec = sp)
       }
     } else {

@@ -3,9 +3,10 @@
 # T2 — every number quoted in Section 10 and in the negative-control appendix table, reproduced
 # mechanically from the aggregate outputs of the JLPS pipeline (the counterpart of the simulation
 # checker sims/check_manuscript_values.R). Inputs are aggregates only (cells below ten suppressed);
-# no individual record is read. Version of 2026-09-29: the quoted values are those of the licensed run
-# of 29 September 2026 with kit v1.0 (item specification table R/15_item_scale.csv, whose MD5 the run
-# record 15_env.txt carries and which this checker compares with the table shipped in R/).
+# no individual record is read. Version of 2026-09-29 (v1.1): the quoted values are those of the licensed run
+# of 29 September 2026 with kit v1.1 (item specification table R/15_item_scale.csv, whose MD5 the run
+# record 15_env.txt carries and which this checker compares with the table shipped in R/; the mass diagnostic
+# assessing every nominal indicator with its question's reach; the A+B entry-wave scope).
 #   Rscript check_manuscript_values_T2.R [<results directory>]            check the quoted values
 #   Rscript check_manuscript_values_T2.R [<results directory>] --selftest check, then check the checker
 #     default results directory: ../../P1_jlps_diagnosis/results
@@ -30,7 +31,7 @@ INPUT <- list(file   = "ZQ115AQ212BQ116CQ111DQ211EQ115FQ108GQ112HQ112IQ107JQ109K
 REQUIRED <- c("15_arms.csv", "15_detection_counts.csv", "15_diagnostics_summary.csv", "15_designs_items.csv",
               "15_mass_diagnostic_summary.csv", "15_mass_diagnostic_flags.csv", "15_tests_items.csv", "15_routing_sensitivity.csv",
               "15_style_sensitivity.csv", "15_style_items_audit.csv", "15_env.txt", "04_item_meta.csv", "15_ec_status.csv",
-              "15_ec_scope_sensitivity.csv", "15_ec_counts_by_class.csv",
+              "15_ec_scope_sensitivity.csv", "15_ec_counts_by_class.csv", "15_ec_ab_items.csv",
               "11_negcontrol_w13_summary.csv", "11_negcontrol_w13.csv", "11_env.txt",
               "11b_negcontrol_w13_pooled.csv", "11b_negcontrol_w13_corr.csv", "11b_loading_grid.csv", "11b_env.txt")
 
@@ -150,6 +151,15 @@ run_checks <- function(RES, verbose = TRUE) {
   scv <- function(e, sco) one(sc[estimator == e & scope == sco], paste("scope", e, sco))$n_affected
   chk("entry-wave counts, main scope, reproduce the detection counts (ec / ec_adj)", c(scv("ec", "main (A+B+C)"), scv("ec_adj", "main (A+B+C)")), COUNTS$flagged[4:5])
   chk("admitting the class-D columns raises the two entry-wave counts by two each", c(scv("ec", "all entry-wave items") - scv("ec", "main (A+B+C)"), scv("ec_adj", "all entry-wave items") - scv("ec_adj", "main (A+B+C)")), c(2, 2))
+  ## the A+B scope (kit v1.1): the entry-wave families recomputed within classes A and B, and T_NS by scope
+  scn <- function(e, sco, col) one(sc[estimator == e & scope == sco], paste("scope", e, sco))[[col]]
+  chk("A+B scope: columns / flagged ec / flagged ec_adj (28 and 19 over 181)", c(scn("ec", "A+B (same question at entry)", "n_items"), scv("ec", "A+B (same question at entry)"), scv("ec_adj", "A+B (same question at entry)")), EC$ab)
+  chk("class-C columns among the main entry-wave flags (5 and 4)", c(one(cb[cls == "C"], "class C")$n_affected_main_q, one(rd("15_ec_counts_by_class.csv")[dose_def == "exact" & estimator == "ec_adj" & cls == "C"], "class C, ec_adj")$n_affected_main_q), EC$c_flags)
+  chk("the class-C columns carry no flag in the A+B family (they are outside it)", c(one(cb[cls == "C"], "class C")$n_affected_ab_q, one(cb[cls == "D"], "class D")$n_affected_ab_q), c(0, 0))
+  chk("T_NS by scope: main 39 of 268; A+B 24 of 181", c(scn("ec", "main (A+B+C)", "n_T1_reject"), scn("ec", "main (A+B+C)", "n_T1_tests"), scn("ec", "A+B (same question at entry)", "n_T1_reject"), scn("ec", "A+B (same question at entry)", "n_T1_tests")), c(DIAG$ns, EC$ab_tns))
+  chk("T_NS on classes A and B (13.3%)", round(scn("ec", "A+B (same question at entry)", "n_T1_reject") / scn("ec", "A+B (same question at entry)", "n_T1_tests"), 3), 0.133, 5e-4)
+  abi <- rd("15_ec_ab_items.csv")[dose_def == "exact"]; uniq(abi, c("var", "estimator"), "15_ec_ab_items (exact)")
+  chk("15_ec_ab_items.csv: 181 A/B columns per estimator, A+B-family flags reproduce the scope file", c(abi[estimator == "ec", .N], abi[estimator == "ec" & class3_ab == "affected", .N], abi[estimator == "ec_adj" & class3_ab == "affected", .N]), c(181, EC$ab[2:3]))
   chk("class-C subgroups used (2007: the employed, employees, the married, with a partner, parents)",
       sort(unique(es[ec_ok & ec_class == "C", ec_subgroup])), c("employed2007", "employee2007", "married2007", "parent2007", "partner2007"))
   ## the detection counts cover columns with variation that are inside the counts (count_exclude = FALSE: not
@@ -250,9 +260,13 @@ run_checks <- function(RES, verbose = TRUE) {
   chk("largest ratio in a supported category",                ms$max_supported_ratio,   MASS$max_supported, 5e-4)
   fl <- rd("15_mass_diagnostic_flags.csv")[dose_def == "exact"]
   uniq(fl, "var", "15_mass_diagnostic_flags (exact)")
-  chk("column with the largest finite ratio (mother died in the past year, DQ09_D)", one(fl[funnel_ratio == max(funnel_ratio, na.rm = TRUE)], "largest finite ratio")$var, MASS$max_finite_item)
-  chk("second largest finite ratio (expects to take over the family business, DQ56_C)", c(fl[order(-funnel_ratio)][2, var], round(fl[order(-funnel_ratio)][2, funnel_ratio], 3)), c("DQ56_C", "1.27"))
-  chk("both largest ratios exceed one only in sparse categories", as.numeric(all(fl[var %in% c("DQ09_D", "DQ56_C"), funnel_ratio_supported] <= 1)), 1)
+  chk("column with the largest finite ratio (support for a minor party, DQ30__6)", one(fl[funnel_ratio == max(funnel_ratio, na.rm = TRUE)], "largest finite ratio")$var, MASS$max_finite_item)
+  chk("the four largest finite ratios (DQ30__6, DQ44_1__5, DQ09_D, DQ56_C)", fl[order(-funnel_ratio)][1:4, var], c("DQ30__6", "DQ44_1__5", "DQ09_D", "DQ56_C"))
+  chk("their values (1.955, 1.581, 1.369, 1.270)", round(fl[order(-funnel_ratio)][1:4, funnel_ratio], 3), c(1.955, 1.581, 1.369, 1.270), 5e-4)
+  chk("all four exceed one only in sparse categories", as.numeric(all(fl[var %in% c("DQ30__6", "DQ44_1__5", "DQ09_D", "DQ56_C"), funnel_ratio_supported] <= 1)), 1)
+  chk("every nominal indicator with fresh answers was assessed (none skipped for lack of reach)",
+      c(tst_all <- rd("15_tests_items.csv")[dose_def == "exact" & family == "A_substantive" & grepl("__", var) & !is.na(funnel_ncat), .N], im[in_universe %in% TRUE & spec_scale == "nominal", .N]), c(90, 90))
+  chk("no positive/zero flag is an indicator", sum(grepl("__", fl[funnel_zero_denom > 0, var])), 0)
   chk("items exceeding one in a supported category", sort(fl[funnel_ratio_supported > 1, var]), MASS$supported_items)
   chk("siblings for help in finding work (DQ08B_4): supported ratio", one(fl[var == "DQ08B_4"], "DQ08B_4")$funnel_ratio_supported, 1.020, 5e-4)
   chk("spouse prepares meals (DQ45A): supported ratio", one(fl[var == "DQ45A"], "DQ45A")$funnel_ratio_supported, 1.192, 5e-4)
@@ -273,11 +287,11 @@ run_checks <- function(RES, verbose = TRUE) {
   tst <- rd("15_tests_items.csv")[dose_def == "exact" & family == "A_substantive" & !is.na(funnel_ncat)]
   gap <- tst$reach_new - tst$reach_old_S
   chk("eligible columns of the mass diagnostic in the test file", nrow(tst), MASS$eligible)
-  chk("reach rates of the two arms differ by less than ten points over the 410 columns (max gap in points, one decimal)", round(100 * max(abs(gap)), 1), 9.1, 5e-2)
+  chk("reach rates of the two arms differ by less than ten points over the 485 columns (max gap in points, one decimal)", round(100 * max(abs(gap)), 1), 9.1, 5e-2)
   chk("largest reach gaps: owner-occupied housing follow-ups (DQ39_*) and the unmarried block (DQ50)",
       c(all(grepl("^DQ39_", tst$var[abs(gap) > 0.08])), any(grepl("^DQ50$", tst$var[gap > 0.07]))), c(TRUE, TRUE))
-  chk("items named in the text: reconcilable (mother died, family business, meals, siblings)",
-      as.numeric(fl[match(c("DQ09_D", "DQ56_C", "DQ45A", "DQ08B_4"), var), funnel_identity_feasible]), MASS$named_feasible)
+  chk("items named in the text: reconcilable (minor party, spouse family employee, mother died, family business, meals, siblings)",
+      as.numeric(fl[match(c("DQ30__6", "DQ44_1__5", "DQ09_D", "DQ56_C", "DQ45A", "DQ08B_4"), var), funnel_identity_feasible]), MASS$named_feasible)
   ## routing-threshold sensitivity (the flag recomputed at 10 and 20 points and with no routing exclusion)
   rs <- rd("15_routing_sensitivity.csv")[dose_def == "exact"]
   uniq(rs, "threshold", "15_routing_sensitivity (exact)")
@@ -345,7 +359,7 @@ run_checks <- function(RES, verbose = TRUE) {
 ## 523 columns = 284 binary + 102 ordered + 41 continuous items + 90 indicators + 6 derived items
 UNIV <- list(table = c(540, 53, 15, 6), n = 523, by_scale = c(284, 102, 41, 90, 6))
 ## entry-wave counterparts: 320 columns; 16 of them routing-flagged, 35 class D, 269 main (A, B, C); in the counts 181 (A + B) + 87 (C) = 268, 35 (D) outside
-EC <- list(status = c(320, 16, 35, 269), by_class = c(181, 87, 35))
+EC <- list(status = c(320, 16, 35, 269), by_class = c(181, 87, 35), ab = c(181, 28, 19), c_flags = c(5, 4), ab_tns = c(24, 181))
 COUNTS <- list(n_naive = 490, n_matched = c(489, 489), flagged = c(30, 21, 13, 29, 23), excluded = c(1, 31, 1), followup = "DQ46Y",
                common = c(18, 16, 9, 29, 23), n_all5 = 3, all5_items = "DQ26, DQ39__1, DQ55_Q", all5_items_semicolon = "DQ26; DQ39__1; DQ55_Q")
 DIAG <- list(ns = c(39, 268), sd = c(43, 489), sd_nr = c(73, 409), share_ns = 0.146, share_sd = 0.088, share_nr = 0.178, grid4 = c(50, 73))   # rejections and denominators (licensed run)
@@ -358,9 +372,9 @@ STYLE <- list(ext_range = c(-0.31, -0.22), mid_range = c(0.19, 0.21), n_rating =
               v07_ext_range = c(-0.26, -0.21), v07_mid_range = c(0.20, 0.22),
               all_ext_range = c(-0.32, -0.23), all_mid_range = c(0.20, 0.23), rf_ext_range = c(-0.29, -0.22), bip_ext_range = c(-0.29, -0.21),
               bip_mid_range = c(0.15, 0.17), n_agree = 17, agree_ext_range = c(-0.28, -0.20), agree_mid_range = c(0.15, 0.17))
-MASS <- list(max_finite_item = "DQ09_D", supported_items = c("DQ08B_4", "DQ45A"), eligible = 410, zero_denom_items = 10, zero_denom_categories = 10,
-             zero_denom_subgroup = 9, not_reconcilable = c(0, 0, 0, 0), median_missing = 0.0177, max_needed = 0.0065, named_feasible = c(1, 1, 1, 1),
-             finite_gt1 = 8, max_finite = 1.369, supported_gt1 = 2, sparse_only_gt1 = 6, max_supported = 1.192,
+MASS <- list(max_finite_item = "DQ30__6", supported_items = c("DQ08B_4", "DQ45A"), eligible = 485, zero_denom_items = 10, zero_denom_categories = 10,
+             zero_denom_subgroup = 9, not_reconcilable = c(0, 0, 0, 0), median_missing = 0.0177, max_needed = 0.0065, named_feasible = c(1, 1, 1, 1, 1, 1),
+             finite_gt1 = 11, max_finite = 1.955, supported_gt1 = 2, sparse_only_gt1 = 9, max_supported = 1.192,
              zero_denom_routing = c("DQ49_2P", "DQ49_2Z"))
 
 res <- run_checks(RES0)
@@ -393,6 +407,10 @@ if (SELFTEST) {
               csv_edit("15_ec_status.csv", function(x) x[ec_class == "D" & ec_ok == TRUE, ec_main := TRUE]))
   expect_fail("a nominal indicator dropped from the universe (04_item_meta.csv)",
               csv_edit("04_item_meta.csv", function(x) x[var == "DQ30__8", in_universe := FALSE]))
+  expect_fail("a nominal indicator skipped by the mass diagnostic (15_tests_items.csv, funnel_ncat set to NA)",
+              csv_edit("15_tests_items.csv", function(x) x[var == "DQ30__8" & family == "A_substantive", funnel_ncat := NA_integer_]))
+  expect_fail("the A+B scope row removed (15_ec_scope_sensitivity.csv)",
+              csv_edit("15_ec_scope_sensitivity.csv", function(x) x[!(scope == "A+B (same question at entry)" & estimator == "ec")]))
   expect_fail("the v0.7-rule rows of the style sensitivity file altered (15_style_sensitivity.csv)",
               csv_edit("15_style_sensitivity.csv", function(x) x[battery == "v07_asrun" & indicator == "ext" & estimator == "naive", d_std := d_std + 0.01]))
   expect_fail("another input named by 11_env.txt", function(d) {
