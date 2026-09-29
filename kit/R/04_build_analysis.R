@@ -13,6 +13,12 @@
 # v4 2026-09-15: NAP_OVERRIDE(尺度付随の「いない」コード)を追加。
 # v5 2026-09-24: 中間・極端の人レベル指標は、R/15_style_items.csv に事前指定した評定尺度項目だけから作る
 #   (R/15_style_items.R。以前は「実質コードが 4〜7 個で連番」の全項目が入り、婚姻状態・役職などの名義・分類項目も含まれていた)。
+# v6 2026-09-28 (v1.0): 項目ごとの尺度・特殊コード・再符号化・指標化・派生・フィルターは R/15_item_scale.csv で明示する
+#   (R/15_item_scale.R)。値ラベルの数だけで尺度を決める規則と、ラベル文字列だけで特殊コードを決める規則はやめた
+#   (review_round06/SCALE_AUDIT_2011_ja.md)。表にない項目はユニバースに入れず 04_items_unlisted.csv に列挙する。
+#   名義の単一選択設問は選択肢ごとの 0/1 指標(<var>__<code>)にし、時刻と交際期間は構成要素から派生項目を作る。
+# v6.1 2026-09-29: 再符号化でまとめたコードの指標ラベルは、そのコード自身のラベル(あれば)にする(DQ30 の 7=8 で
+#   「その他の政党」が「みんなの党」と出ていた)。表の変更(DQ03_1・DQ30)は R/15_item_scale.csv の note を見ること。
 # 実行: cd <P1ルート> && Rscript analysis/R/04_build_analysis.R
 # ============================================================
 
@@ -22,6 +28,7 @@ source(file.path(.here, "00_config.R"))
 source(file.path(.here, "00_utils_disclosure.R"))
 suppressMessages({library(haven); library(data.table)})
 source(file.path(.here, "15_style_items.R"))     # response-style composites: fixed item list + code verification
+source(file.path(.here, "15_item_scale.R"))      # the item specification table (scales, special codes, recodes, indicators, derived items)
 
 RESP_W5 <- "DQ74M"; MAR_W5 <- "DQ43"
 # 負対照23項目(03_negcontrol_sets_v1.csvで確定): 継続=Z版(w1)、追加=D版(w5)
@@ -69,72 +76,131 @@ main <- function() {
   Tt <- as.integer(cn[keep] == 1L)               # 1=継続(経験) / 0=追加(新規)
   cat("diag: risk set n =", length(keep), " (T=1:", sum(Tt), ", T=0:", sum(1 - Tt), ")\n")
 
-  ## --- (2) 項目ユニバース -----------------------------------------------------
+  ## --- (2) 項目ユニバース(v6: R/15_item_scale.csv による明示的な指定) ------------------------
+  spec_tb <- read_item_scale(); sid_scale <- item_scale_id()
+  cat("diag: item specification table:", basename(sid_scale$path), "md5", sid_scale$md5, ";", nrow(spec_tb), "rows\n")
+  pats <- list(dk = DK_PAT, ref = REF_PAT, nr = NR_PAT, nap = NAP_PAT)
   dvars <- grep("^[Dd][Qq][0-9]", names(d), value = TRUE)
   dvars <- dvars[!grepl(EXCL_PAT, dvars, ignore.case = TRUE)]
   is_chr <- vapply(d[, ..dvars], is.character, TRUE)
   dvars <- dvars[!is_chr]
-  codes_of <- function(vl, pat) if (!is.null(vl)) unname(vl[grepl(pat, names(vl))]) else numeric(0)
-  nap_codes_for <- function(v, vl) { x <- codes_of(vl, NAP_PAT); ov <- NAP_OVERRIDE[[toupper(v)]]; if (!is.null(ov)) x <- union(x, ov); x }
-  meta <- rbindlist(lapply(dvars, function(v) {
-    x <- d[[v]][keep]
-    lab <- attr(d[[v]], "label", exact = TRUE); if (is.null(lab)) lab <- ""
-    vl  <- attr(d[[v]], "labels", exact = TRUE)
-    xv  <- as.numeric(zap_labels(x))
-    dk_codes  <- codes_of(vl, DK_PAT);  ref_codes <- codes_of(vl, REF_PAT)
-    nr_codes  <- codes_of(vl, NR_PAT);  nap_codes <- nap_codes_for(v, vl)
-    spec <- c(dk_codes, ref_codes, nr_codes, nap_codes)
+  spec_row <- function(v) { i <- match(toupper(v), spec_tb$key); if (is.na(i)) NULL else spec_tb[i] }
+  unlisted <- dvars[vapply(dvars, function(v) is.null(spec_row(v)), TRUE)]
+  if (length(unlisted)) cat("diag:", length(unlisted), "D-series variables are not listed in 15_item_scale.csv and are left out (04_items_unlisted.csv)\n")
+  write_aggregate(data.table(var = unlisted, label = vapply(unlisted, function(v) { l <- attr(d[[v]], "label", exact = TRUE); if (is.null(l)) "" else substr(as.character(l), 1, 60) }, "")), "04_items_unlisted.csv")
+  listed <- setdiff(dvars, unlisted)
+  ## a candidate item: the numeric vector (special codes to missing, recoded, filtered), the reach indicator, its
+  ## special-code kinds and substantive codes. Nominal items return one candidate per indicator.
+  num_all <- function(nm) { x <- getcol(nm, required = FALSE); if (is.null(x)) NULL else as.numeric(zap_labels(x))[keep] }
+  cand <- list(); vl_of <- list(); spec_list <- list(); parent_codes <- list()
+  add_cand <- function(v, lab, subst, base, sc, scale, k, codes, labs, qgroup = "", parent = v, spec) {
+    cand[[v]] <<- list(var = v, label = lab, subst = subst, base = base, sc = sc, scale = scale, k = k, codes = codes, labs = labs,
+                       qgroup = qgroup, parent = parent, spec = spec)
+  }
+  for (v in listed) {
+    sp <- spec_row(v)
+    if (sp$scale == "exclude") { spec_list[[v]] <- sp; next }
+    x <- d[[v]][keep]; vl <- attr(d[[v]], "labels", exact = TRUE)
+    lab <- attr(d[[v]], "label", exact = TRUE); if (is.null(lab)) lab <- ""; lab <- substr(as.character(lab), 1, 60)
+    xv <- as.numeric(zap_labels(x))
+    sc <- special_codes_of(vl, sp, pats)
+    ov <- NAP_OVERRIDE[[toupper(v)]]; if (!is.null(ov)) sc$nap <- union(sc$nap, ov)    # 00_config.R (kept for the entry-wave side of 15)
+    spec <- unlist(sc)
+    base <- !is.na(xv) & !(xv %in% sc$nap)
     subst <- xv; subst[subst %in% spec] <- NA
-    n1 <- sum(!is.na(subst[Tt == 1])); n0 <- sum(!is.na(subst[Tt == 0]))
-    # 回答ベース率(実質+特殊コード含む「その設問に到達した」割合)——フィルター診断
-    base1 <- mean(!is.na(xv[Tt == 1]) & !(xv[Tt == 1] %in% nap_codes))
-    base0 <- mean(!is.na(xv[Tt == 0]) & !(xv[Tt == 0] %in% nap_codes))
-    k  <- if (!is.null(vl)) length(setdiff(unname(vl), spec)) else 0L
-    un <- length(unique(na.omit(subst)))
-    data.table(var = v, label = substr(as.character(lab), 1, 60),
-               n_T1 = n1, n_T0 = n0, k_labels = k, n_unique = un,
-               n_dk_codes = length(dk_codes), n_ref_codes = length(ref_codes),
-               base_rate_T1 = round(base1, 3), base_rate_T0 = round(base0, 3))
+    subst <- apply_recode(subst, sp$recode)
+    codes <- if (!is.null(vl)) recode_codes(setdiff(unname(vl), spec), sp$recode) else numeric(0)
+    ## label of each (recoded) code: the label of the code itself when it survives the recode, else the first label merged into it
+    labs  <- if (!is.null(vl)) vapply(codes, function(cd) { rc <- apply_recode(unname(vl), sp$recode); i <- which(!is.na(rc) & rc == cd & unname(vl) == cd)
+                                                            if (!length(i)) i <- which(!is.na(rc) & rc == cd); if (!length(i)) "" else names(vl)[i[1]] }, "") else character(0)
+    exp_codes <- parse_codes(sp$codes_expected)
+    if (length(exp_codes) && !(length(codes) == length(exp_codes) && all(codes == exp_codes)))
+      stop(sprintf("15_item_scale.csv: %s expects the substantive codes %s but the file shows %s", v, sp$codes_expected, paste(codes, collapse = ";")), call. = FALSE)
+    if (sp$scale %in% c("binary", "ordinal", "nominal") && !length(codes))
+      stop(sprintf("15_item_scale.csv: %s is declared %s but the file has no substantive value labels for it", v, sp$scale), call. = FALSE)
+    if (nzchar(sp$filter)) { mk <- filter_mask(sp$filter, length(keep), num_all); subst[!mk] <- NA; base <- base & mk }
+    vl_of[[v]] <- vl; spec_list[[v]] <- sp
+    if (sp$scale == "nominal") {
+      if (!length(codes)) stop("15_item_scale.csv: nominal item without value labels: ", v, call. = FALSE)
+      ind <- make_indicators(subst, codes, v); parent_codes[[v]] <- codes
+      for (j in seq_along(codes)) {
+        nm <- colnames(ind)[j]
+        ## the item-nonresponse and don't-know indicators of the question are attached to its first indicator only
+        add_cand(nm, paste0(lab, ": ", labs[j]), ind[, j], if (j == 1L) base else rep(FALSE, length(base)), sc, "binary", 2L, c(0, 1), c("0", "1"), qgroup = v, parent = v, spec = sp)
+      }
+    } else {
+      k <- if (sp$scale %in% c("binary", "ordinal")) length(codes) else 0L
+      add_cand(v, lab, subst, base, sc, sp$scale, k, codes, labs, spec = sp)
+    }
+  }
+  ## derived items (constructed from components read from the file)
+  derived_tb <- spec_tb[grepl("^(clock|months):", construct)]
+  for (i in seq_len(nrow(derived_tb))) {
+    sp <- derived_tb[i]; cs <- parse_construct(sp$construct)
+    comp <- if (cs$type == "clock") c(cs$X, cs$Y, cs$Z) else c(cs$Y, cs$M)
+    vals <- lapply(comp, num_all)
+    if (any(vapply(vals, is.null, TRUE))) { cat("diag: derived item", sp$var, "skipped: component(s) not in file:", paste(comp[vapply(vals, is.null, TRUE)], collapse = ", "), "\n"); next }
+    if (cs$type == "clock") {
+      leave <- if (!is.null(cs$leave)) { if (is.null(cand[[cs$leave]])) stop("clock construct of ", sp$var, " refers to ", cs$leave, " which is not built yet", call. = FALSE); cand[[cs$leave]]$subst } else NULL
+      subst <- build_clock(vals[[1]], vals[[2]], vals[[3]], cs$kind, leave)
+    } else subst <- build_months(vals[[1]], vals[[2]])
+    if (nzchar(sp$filter)) { mk <- filter_mask(sp$filter, length(keep), num_all); subst[!mk] <- NA }
+    base <- !is.na(subst)                              # reach = a usable time/duration (the format code is a separate item)
+    add_cand(sp$var, sp$label, subst, base, list(dk = numeric(0), ref = numeric(0), nr = numeric(0), nap = numeric(0)), "continuous", 0L, numeric(0), character(0), spec = sp)
+    spec_list[[sp$var]] <- sp
+  }
+  meta <- rbindlist(lapply(cand, function(cc) {
+    n1 <- sum(!is.na(cc$subst[Tt == 1])); n0 <- sum(!is.na(cc$subst[Tt == 0]))
+    base1 <- mean(cc$base[Tt == 1]); base0 <- mean(cc$base[Tt == 0])
+    un <- length(unique(na.omit(cc$subst)))
+    data.table(var = cc$var, label = cc$label, n_T1 = n1, n_T0 = n0, k_labels = as.integer(cc$k), n_unique = un,
+               n_dk_codes = length(cc$sc$dk), n_ref_codes = length(cc$sc$ref),
+               base_rate_T1 = round(base1, 3), base_rate_T0 = round(base0, 3),
+               spec_scale = cc$spec$scale, qgroup = cc$qgroup, parent = cc$parent, in_counts = cc$spec$in_counts,
+               ec_class = cc$spec$ec_class, ec_subgroup = cc$spec$ec_subgroup, ec_main = cc$spec$ec_main,
+               recode = cc$spec$recode, construct = cc$spec$construct, filter = cc$spec$filter,
+               scale_type = if (un <= 1) "degenerate" else cc$scale)
   }))
-  meta[, scale_type := fifelse(n_unique <= 1, "degenerate",
-                        fifelse(k_labels == 2 | n_unique == 2, "binary",
-                        fifelse(k_labels %in% 3:9, "ordinal", "continuous")))]
   meta[, filter_mismatch := abs(base_rate_T1 - base_rate_T0) > FILTER_GAP]
   meta[, in_universe := n_T1 >= 200 & n_T0 >= 50 & scale_type != "degenerate"]
-  cat("diag: D系候補", nrow(meta), "項目 → ユニバース", sum(meta$in_universe),
-      "項目(うちフィルター不一致フラグ", sum(meta$in_universe & meta$filter_mismatch), ")\n")
+  ## items of the table that are excluded or not built (for the record, outside the universe)
+  n_excl <- sum(spec_tb$scale == "exclude" & spec_tb$key %in% toupper(listed))
+  cat("diag: D系候補", length(listed), "項目(表にあるもの; 除外指定", n_excl, ") → 候補", nrow(meta), "列(名義の指標と派生項目を含む) → ユニバース", sum(meta$in_universe),
+      "列(うちフィルター不一致フラグ", sum(meta$in_universe & meta$filter_mismatch), ")\n")
   print(meta[in_universe == TRUE, .N, by = scale_type])
+  print(meta[in_universe == TRUE, .N, by = .(spec_scale, derived = nzchar(construct) & construct != "indicators")])
 
   ## --- (3) アウトカム行列 -----------------------------------------------------
   uni <- meta[in_universe == TRUE, var]
   Ymat  <- matrix(NA_real_, length(keep), length(uni), dimnames = list(NULL, uni))
   Mmat  <- matrix(NA_real_, length(keep), length(uni), dimnames = list(NULL, uni))
   DKmat <- REFmat <- matrix(NA_real_, length(keep), length(uni), dimnames = list(NULL, uni))
-  vl_of <- list(); spec_of <- list(); vals_of <- list(); labs_of <- list()   # value labels, special codes, substantive codes and their labels per universe item (used below and by 15)
+  spec_of_item <- list(); vals_of <- list(); labs_of <- list()   # special codes, substantive codes and their labels per universe item (used below and by 15)
   for (v in uni) {
-    x  <- d[[v]][keep]; vl <- attr(d[[v]], "labels", exact = TRUE)
-    xv <- as.numeric(zap_labels(x))
-    dk_codes  <- codes_of(vl, DK_PAT);  ref_codes <- codes_of(vl, REF_PAT)
-    nr_codes  <- codes_of(vl, NR_PAT);  nap_codes <- nap_codes_for(v, vl)
-    spec  <- c(dk_codes, ref_codes, nr_codes, nap_codes)
-    base  <- !is.na(xv) & !(xv %in% nap_codes)         # 設問に到達(非該当を除く)
-    subst <- xv; subst[xv %in% spec] <- NA
-    # B族は「設問到達者」の中で定義(フィルター構造と分離)。
-    # 注: NAのままの真の項目無回答は base=FALSE 側に落ちる(NAと非該当を
-    # データ上区別できないため)——無回答コード型のみをB_itemnonrespに使う。
-    Mmat[base, v]   <- as.integer(xv[base] %in% nr_codes)
-    DKmat[base, v]  <- as.integer(xv[base] %in% dk_codes)
-    REFmat[base, v] <- as.integer(xv[base] %in% ref_codes)
-    st <- meta[var == v, scale_type]
-    if (st == "continuous") {                       # 1/99%ウィンザライズ
+    cc <- cand[[v]]; base <- cc$base; subst <- cc$subst
+    ## B family: defined among those who reached the question (routing kept apart). A true item nonresponse recorded
+    ## as NA cannot be told from routing; only the no-answer code enters B_itemnonresp.
+    src_raw <- if (nzchar(cc$qgroup) || nzchar(cc$spec$construct)) NULL else as.numeric(zap_labels(d[[v]][keep]))
+    if (!is.null(src_raw)) {
+      Mmat[base, v]   <- as.integer(src_raw[base] %in% cc$sc$nr)
+      DKmat[base, v]  <- as.integer(src_raw[base] %in% cc$sc$dk)
+      REFmat[base, v] <- as.integer(src_raw[base] %in% cc$sc$ref)
+    } else if (nzchar(cc$qgroup) && any(base)) {          # first indicator of a nominal question: the question's codes
+      src_raw <- as.numeric(zap_labels(d[[cc$parent]][keep]))
+      Mmat[base, v]   <- as.integer(src_raw[base] %in% cc$sc$nr)
+      DKmat[base, v]  <- as.integer(src_raw[base] %in% cc$sc$dk)
+      REFmat[base, v] <- as.integer(src_raw[base] %in% cc$sc$ref)
+    }
+    if (cc$scale == "continuous") {                 # 1/99%ウィンザライズ
       qs <- quantile(subst, c(.01, .99), na.rm = TRUE)
       subst <- pmin(pmax(subst, qs[1]), qs[2])
     }
     Ymat[, v] <- subst
-    vl_of[[v]] <- vl; spec_of[[v]] <- spec
-    vals_of[[v]] <- if (!is.null(vl)) sort(setdiff(unname(vl), spec)) else numeric(0)
-    labs_of[[v]] <- if (!is.null(vl)) names(vl)[match(vals_of[[v]], unname(vl))] else character(0)
+    spec_of_item[[v]] <- unlist(cc$sc); vals_of[[v]] <- cc$codes; labs_of[[v]] <- cc$labs
   }
+  ## value labels of the universe items (for the style-item verification below): the parent's labels for an indicator
+  vl_uni <- lapply(uni, function(v) vl_of[[cand[[v]]$parent]]); names(vl_uni) <- uni
+  vl_of <- vl_uni; spec_of <- spec_of_item
   ## 中間・極端の人レベル指標(v5): 事前指定リスト(評定尺度)の項目のうち、ユニバースにあり、実質コードが 1..k で
   ## 検証できたものだけ。中点指標は、中央のコードが中立ラベル(NEUTRAL_PAT)であることを確認できた奇数件法の項目だけ。
   st <- read_style_items()
@@ -152,7 +218,7 @@ main <- function() {
       sum(!style$in_universe), "、コード不一致", sum(style$in_universe & !style$ok), "\n")
   ## グリッド(同一問番号で4枝以上・同一尺度)のstraightlining
   meta[, qbase := sub("_[A-Za-z0-9]+$", "", var)]
-  grids <- meta[in_universe == TRUE & grepl("_", var),
+  grids <- meta[in_universe == TRUE & grepl("_", var) & !nzchar(qgroup) & !nzchar(construct),
                 .(nsub = .N, kk = uniqueN(k_labels)), by = qbase][nsub >= 4 & kk == 1, qbase]
   SL <- rep(0L, length(keep)); SLn <- rep(0L, length(keep))
   for (g in grids) {
@@ -172,6 +238,7 @@ main <- function() {
     m <- Mmat[, v]
     abs(mean(m[Tt == 1], na.rm = TRUE) - mean(m[Tt == 0], na.rm = TRUE))
   }, 0.0)
+  nr_gap[!is.finite(nr_gap)] <- 0        # derived items and the later indicators of a nominal question carry no item-nonresponse column
   meta[var %in% uni, nr_routing_flag := nr_gap[var] > 0.15]
   clean_m <- uni[!(nr_gap > 0.15)]
   cat("diag: 無回答ルーティング疑い項目 =", sum(nr_gap > 0.15),
@@ -219,10 +286,21 @@ main <- function() {
     data.table(covariate = cname, smd_unw = smd(rep(1, length(x))), smd_ipw = smd(w))
   }))
   write_aggregate(bal, "04_balance.csv")
-  write_aggregate(meta[, .(var, label, n_T1, n_T0, k_labels, scale_type,
+  write_aggregate(meta[, .(var, label, n_T1, n_T0, k_labels, scale_type, spec_scale, qgroup, in_counts, ec_class, ec_subgroup, ec_main,
+                           recode, construct, filter,
                            base_rate_T1, base_rate_T0, filter_mismatch,
                            nr_routing_flag, in_universe)],
                   "04_item_meta.csv", exempt = c("k_labels"))
+  ## the resolved specification of every universe item (an aggregate: codes and labels, no counts), for the author's
+  ## review against the questionnaire and for freezing into codes_expected of 15_item_scale.csv
+  write_aggregate(data.table(var = uni, label = meta$label[match(uni, meta$var)], scale = meta$scale_type[match(uni, meta$var)],
+                             codes = vapply(uni, function(v) paste(vals_of[[v]], collapse = ";"), ""),
+                             labels = vapply(uni, function(v) paste(labs_of[[v]], collapse = " | "), ""),
+                             dk = vapply(uni, function(v) paste(cand[[v]]$sc$dk, collapse = ";"), ""),
+                             nr = vapply(uni, function(v) paste(cand[[v]]$sc$nr, collapse = ";"), ""),
+                             nap = vapply(uni, function(v) paste(cand[[v]]$sc$nap, collapse = ";"), ""),
+                             ref = vapply(uni, function(v) paste(cand[[v]]$sc$ref, collapse = ";"), "")),
+                  "04_item_scale_resolved.csv")
   write_aggregate(data.table(stat = c("n_risk", "n_T1", "n_T0", "n_universe", "n_grids",
                                       "ess_T1", "max_w"),
                              value = c(length(keep), sum(Tt), sum(1 - Tt),
@@ -232,16 +310,17 @@ main <- function() {
 
   ## --- (5) 派生保存(ローカルのみ) --------------------------------------------
   idc <- names(d)[toupper(names(d)) %in% toupper(ID_COLS)]
-  src <- list(input = fp, style_items = style_items_id(), rows = as.integer(keep), cn = as.integer(cn[keep]),
+  src <- list(input = fp, style_items = style_items_id(), item_scale = sid_scale, rows = as.integer(keep), cn = as.integer(cn[keep]),
               id = if (length(idc)) as.character(zap_labels(d[[idc[1]]]))[keep] else NULL)
   saveRDS(list(T = Tt, w = w, e = e, X = as.matrix(X), Y = Ymat, M = Mmat,
                DK = DKmat, REF = REFmat, person_dq = person_dq,
                meta = meta[in_universe == TRUE], src = src,
-               style = style, codes = vals_of, code_labels = labs_of),   # v5: verified style items; substantive codes and labels of every universe item
+               style = style, codes = vals_of, code_labels = labs_of,   # v5: verified style items; substantive codes and labels of every universe item
+               spec = spec_tb, parent_codes = parent_codes),            # v6: the item specification table as read; codes of the nominal questions
           file.path(DERIVED_DIR, "analysis_w5.rds"))
   cat("saved:", file.path(DERIVED_DIR, "analysis_w5.rds"), "\n")
   cat("\n== 04 完了。共有してほしいもの ==\n")
-  cat("コンソール出力全文 + 04_summary.csv / 04_balance.csv / 04_item_meta.csv\n")
+  cat("コンソール出力全文 + 04_summary.csv / 04_balance.csv / 04_item_meta.csv / 04_item_scale_resolved.csv / 04_items_unlisted.csv\n")
 }
 
 run_guarded("04_build_analysis", main)

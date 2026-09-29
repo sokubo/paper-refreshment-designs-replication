@@ -1,0 +1,547 @@
+var,label,scale,codes_expected,nap_add,dk_add,nr_add,ref_add,recode,construct,filter,in_counts,ec_class,ec_subgroup,ec_main,note,source
+DQ02,w5問2_就業状況,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ02_1,w5問2付問1_通学か家事か,nominal,,,,,,,indicators,,TRUE,A,,TRUE,指標 1-3,決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ02_2,w5問2付問2_収入になる仕事をしたいか,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ03_1,w5問3(1)_現職・働き方,nominal,1;2;3;4;5;6;7;8;9,10;11,,,,12=3,indicators,,TRUE,C,employed2007,TRUE,指標 1-9 (調査票 問3(1) の 9 選択肢)。データの 10 無職(学生は除く)・11 学生(働いていない) は問2 の分岐から提供元が付けたコードで回答選択肢ではない → 非該当扱い(nap_add; DQ02・DQ02_1 と重複させない)。12 学生(現在非正規で働いている) は選択肢 3 (学生アルバイトを含む) に戻す(12=3)。2007 の JC_1 も同じ 12 コード(提供元ラベル表 PM160_label.txt で確認 2026-09-29),決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3; 2026-09-29 ラベル照合(悩み 3)
+DQ03_2,w5問3(2)_現職・職業―大分類(プリコード),nominal,,,,,,,indicators,,TRUE,C,employed2007,TRUE,指標 1-8,決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+dq03_2c,w5問3(2)_現職・職業_小分類（07版）,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (occupation minor-group code),04 (label rule) + SCALE_AUDIT check
+dq03_2l,w5問3(2)_現職・職業_大分類（アフターコード）,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (occupation major group; after-code),04 (label rule) + SCALE_AUDIT check
+DQ03_3,w5問3(3)_現職・役職,ordinal,,7,,,,,,,TRUE,C,employed2007,TRUE,7 = その他 を非該当に; 1-6 は準順序,SCALE_AUDIT §4.2; EC_ITEMS_REVIEW
+DQ03_41,w5問3(4)A_現職・従事時間（1日あたり）,continuous,,,,,,,,,TRUE,D,,FALSE,入所波補正の主分析から外す(決定 2026-09-27),04 (label rule) + SCALE_AUDIT check
+DQ03_4M,w5問3(4)B_現職・従事日数（月あたり）,continuous,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_5A,w5問3(5)-1_現職・収入の形態―時給,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_5B,w5問3(5)-2_現職・収入の形態―日給,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_5C,w5問3(5)-3_現職・収入の形態―週給,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_5D,w5問3(5)-4_現職・収入の形態―月給,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_5E,w5問3(5)-5_現職・収入の形態―年俸,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_5F,w5問3(5)-6_現職・収入の形態―その他,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_5AS,w5問3(5)-1_現職・収入の金額―時給,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_5BS,w5問3(5)-2_現職・収入の金額―日給,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ03_5CS,w5問3(5)-3_現職・収入の金額―週給,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate); 値ラベルがなく観測値が 2 種類だけだったため旧規則では binary と判定されていた金額。連続として扱う(件数の基準に届かず落ちる見込み),2026-09-28 実データの実行で判明
+DQ03_5DS,w5問3(5)-4_現職・収入の金額―月給,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_5ES,w5問3(5)-5_現職・収入の金額―年俸,continuous,,,,,,,,DQ03_5E=1,TRUE,,,FALSE,年俸を選んだ人(DQ03_5E = 1)に限る。非該当者に値が入っているため。ユニバースの基準を満たさなければ落ちる,SCALE_AUDIT §4.4
+dq03_6c,w5問3(6)_現職・産業（SSM産業コード）,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (SSM industry code),04 (label rule) + SCALE_AUDIT check
+DQ03_7,w5問3(7)_現職・企業規模,ordinal,,9,,,,,,,TRUE,C,employed2007,TRUE,9 = 官公庁 を非該当に; 10 = わからない は DK (ラベル規則),SCALE_AUDIT §4.2; EC_ITEMS_REVIEW
+DQ03_8,w5問3(8)_通勤時間,ordinal,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ03_9,w5問3(9)_週あたりの所定労働時間,ordinal,,7,,,,,,,TRUE,C,employed2007,TRUE,7 = 定まっていない を尺度の外(非該当扱い); 8 = わからない は DK,SCALE_AUDIT §4.2; EC_ITEMS_REVIEW §2
+DQ03_10,w5問3(10)_労働時間希望,ordinal,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_11,w5問3(11)_労働組合が組織されているか,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_12,w5問3(12)_労働組合に加入しているか,nominal,,,,,,,indicators,,TRUE,,,FALSE,指標 1-3; 2007 に対応変数なし(変数対応表),決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ03_13,w5問3(13)_現在の会社で当面仕事を続けるか,ordinal,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ03_14,w5問3(14)_雇用契約期間,binary,,,,,,,,,TRUE,C,employee2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ03_14S,w5問3(14)付問_雇用契約の更新,ordinal,,,,,,,,,TRUE,C,employee2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ03_15A,w5問3(15)A_厚生年金・共済年金,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_15B,w5問3(15)B_雇用保険,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_16A,w5問3(16)A_退職金,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_16B,w5問3(16)B_有給休暇,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_16C,w5問3(16)C_育児休暇,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_16D,w5問3(16)D_ボーナス,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_16SA,w5問3(16)A付問_退職金受け取り可否,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_16SB,w5問3(16)B付問_有給休暇利用可否,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_16SC,w5問3(16)C付問_育児休暇利用可否,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ03_16SD,w5問3(16)D付問_ボーナス受け取り可否,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ04_1A,w5問4(1)A_自分の仕事のペースを自分で決められる,ordinal,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_1B,w5問4(1)B_職場の仕事のやり方を自分で決められる,ordinal,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_1C,w5問4(1)C_部下の仕事のやり方を自分が決めている,ordinal,,5,,,,,,,TRUE,C,employed2007,TRUE,5 = 部下はいない を非該当に(00_config の NAP_OVERRIDE と同じ; 両波),00_config NAP_OVERRIDE; EC_ITEMS_REVIEW §2
+DQ04_1D,w5問4(1)D_教育訓練を受ける機会がある,ordinal,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_1E,w5問4(1)E_職業能力を高める機会がある,ordinal,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_1F,w5問4(1)F_自分の生活の必要にあわせて仕事を調整しやすい,ordinal,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_1G,w5問4(1)G_今後1年間に失業（倒産）をする可能性がある,ordinal,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_1H,w5問4(1)H_仕事の内容が面白い,ordinal,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ04_2,w5問4(2)_仕事仲間からのアドバイス,ordinal,,5,,,,,,,TRUE,,,FALSE,5 = 上司・同僚仕事仲間はいない を非該当に,00_config NAP_OVERRIDE
+DQ04_3A,w5問4(3)-1_ほぼ毎日残業,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3B,w5問4(3)-2_社員数が恒常的に不足,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3C,w5問4(3)-3_いつも締め切りに追われている,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3D,w5問4(3)-4_互いに助け合う雰囲気,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3E,w5問4(3)-5_一人ひとりが行う仕事が多い,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3F,w5問4(3)-6_連携しながら行う仕事が多い,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3G,w5問4(3)-7_先輩が後輩を指導する雰囲気,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3H,w5問4(3)-8_社員の希望で異動できる仕組み,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3I,w5問4(3)-9_若手社員の相談相手を決めている,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3J,w5問4(3)-10_将来の仕事について相談できる機会,binary,,,,,,,,,TRUE,C,employed2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3K,w5問4(3)-11_正社員でない人が多い,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3L,w5問4(3)-12_女性が多い,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3M,w5問4(3)-13_男女の別なく活躍できる,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ04_3N,w5問4(3)-14_いずれもあてはまらない,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05,w5問5_この１年の勤め先の変化,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_1,w5問5付問1_（回答の有無）,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ05_2A,w5問5付問2-1_勤め先変化の理由―会社の倒産・廃業・人員整理,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2B,w5問5付問2-2_勤め先変化の理由―契約期間の終了,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2C,w5問5付問2-3_勤め先変化の理由―家庭の事情（結婚、育児、介護など）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2D,w5問5付問2-4_勤め先変化の理由―健康上の理由,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2E,w5問5付問2-5_勤め先変化の理由―労働時間（残業・休日出勤など）に不満,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2F,w5問5付問2-6_勤め先変化の理由―給与・賃金に不満,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2G,w5問5付問2-7_勤め先変化の理由―仕事がきつい・ストレスが大きいため,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2H,w5問5付問2-8_勤め先変化の理由―職場の人間関係に対する不満,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2I,w5問5付問2-9_勤め先変化の理由―昇進やキャリアに将来性がないから,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2J,w5問5付問2-10_勤め先変化の理由―家業を継ぐため,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2K,w5問5付問2-11_勤め先変化の理由―よい仕事がみつかったから,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2L,w5問5付問2-12_勤め先変化の理由―その他,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ05_2M,w5問5付問2-13_勤め先変化の理由―勤め先をやめたり変えたりしていない,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_1,w5問6(1)_専門学校以上への通学（現在）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ06_1A,w5問6(1)付問_現在通学している学校＿設置者,ordinal,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+dq06_1b,w5問6(1)付問_現在通学している学校＿学校名,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+dq06_1c,w5問6(1)付問_現在通学している学校＿学部学科,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_1D,w5問6(1)付問_現在通学している学校＿課程,ordinal,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_1E,w5問6(1)付問_現在通学している学校＿入学年,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_1F,w5問6(1)付問_現在通学している学校＿卒業等年,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_1G,w5問6(1)付問_現在通学している学校＿卒業中退,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_2,w5問6(2)_専門学校以上への通学（この1年間）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ06_2A,w5問6(2)付問_この1年間に通った学校＿設置者,ordinal,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+dq06_2b,w5問6(2)付問_この1年間に通った学校＿学校名,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+dq06_2c,w5問6(2)付問_この1年間に通った学校＿学部学科,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_2D,w5問6(2)付問_この1年間に通った学校＿課程,ordinal,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_2E,w5問6(2)付問_この1年間に通った学校＿入学年,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_2F,w5問6(2)付問_この1年間に通った学校＿卒業等年,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ06_2G,w5問6(2)付問_この1年間に通った学校＿卒業中退,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ07A,w5問7A_ふだんの生活での頻度―運動,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07B,w5問7B_ふだんの生活での頻度―1日に3食を食べる,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07C,w5問7C_ふだんの生活での頻度―栄養バランスの取れた食事を取る,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07D,w5問7D_ふだんの生活での頻度―カップ麺やファーストフードを食べる,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07E,w5問7E_ふだんの生活での頻度―外食,ordinal,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ07F,w5問7F_ふだんの生活での頻度―食事の用意,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07G,w5問7G_ふだんの生活での頻度―洗濯,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07H,w5問7H_ふだんの生活での頻度―家の掃除,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07I,w5問7I_ふだんの生活での頻度―日用品・食料品の買い物,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07J,w5問7J_ふだんの生活での頻度――友人・恋人（配偶者は除く）と食事をする,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07K,w5問7K_ふだんの生活での頻度―友人・恋人（配偶者は除く）と話をする,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ07L,w5問7L_ふだんの生活での頻度―インターネットを利用する（仕事以外で）,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08A_1,w5問8A-1_自分の仕事や勉強のことを相談する人―親,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08A_2,w5問8A-2_自分の仕事や勉強のことを相談する人―配偶者または恋人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08A_3,w5問8A-3_自分の仕事や勉強のことを相談する人―子ども,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08A_4,w5問8A-4_自分の仕事や勉強のことを相談する人―兄弟姉妹,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08A_5,w5問8A-5_自分の仕事や勉強のことを相談する人―その他の親戚,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08A_6,w5問8A-6_自分の仕事や勉強のことを相談する人―仕事関係の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08A_7,w5問8A-7_自分の仕事や勉強のことを相談する人―学生時代の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08A_8,w5問8A-8_自分の仕事や勉強のことを相談する人―その他の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08A_9,w5問8A-9_自分の仕事や勉強のことを相談する人―誰もいない,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08B_1,w5問8B-1_仕事を紹介してもらうことを相談する人―親,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08B_2,w5問8B-2_仕事を紹介してもらうことを相談する人―配偶者または恋人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08B_3,w5問8B-3_仕事を紹介してもらうことを相談する人―子ども,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08B_4,w5問8B-4_仕事を紹介してもらうことを相談する人―兄弟姉妹,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08B_5,w5問8B-5_仕事を紹介してもらうことを相談する人―その他の親戚,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08B_6,w5問8B-6_仕事を紹介してもらうことを相談する人―仕事関係の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08B_7,w5問8B-7_仕事を紹介してもらうことを相談する人―学生時代の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08B_8,w5問8B-8_仕事を紹介してもらうことを相談する人―その他の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08B_9,w5問8B-9_仕事を紹介してもらうことを相談する人―誰もいない,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08C_1,w5問8C-1_友人・恋人・配偶者などとの人間関係のことを相談する人―親,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08C_2,w5問8C-2_友人・恋人・配偶者などとの人間関係のことを相談する人―配偶者または恋人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08C_3,w5問8C-3_友人・恋人・配偶者などとの人間関係のことを相談する人―子ども,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08C_4,w5問8C-4_友人・恋人・配偶者などとの人間関係のことを相談する人―兄弟姉妹,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08C_5,w5問8C-5_友人・恋人・配偶者などとの人間関係のことを相談する人―その他の親戚,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08C_6,w5問8C-6_友人・恋人・配偶者などとの人間関係のことを相談する人―仕事関係の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08C_7,w5問8C-7_友人・恋人・配偶者などとの人間関係のことを相談する人―学生時代の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08C_8,w5問8C-8_友人・恋人・配偶者などとの人間関係のことを相談する人―その他の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08C_9,w5問8C-9_友人・恋人・配偶者などとの人間関係のことを相談する人―誰もいない,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08D_1,w5問8D-1_失業や病気のときにまとまったお金を貸してもらう相談をする人―親,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08D_2,w5問8D-2_失業や病気のときにまとまったお金を貸してもらう相談をする人―配偶者または恋人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08D_3,w5問8D-3_失業や病気のときにまとまったお金を貸してもらう相談をする人―子ども,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08D_4,w5問8D-4_失業や病気のときにまとまったお金を貸してもらう相談をする人―兄弟姉妹,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08D_5,w5問8D-5_失業や病気のときにまとまったお金を貸してもらう相談をする人―その他の親戚,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08D_6,w5問8D-6_失業や病気のときにまとまったお金を貸してもらう相談をする人―仕事関係の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08D_7,w5問8D-7_失業や病気のときにまとまったお金を貸してもらう相談をする人―学生時代の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08D_8,w5問8D-8_失業や病気のときにまとまったお金を貸してもらう相談をする人―その他の友人・知人,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ08D_9,w5問8D-9_失業や病気のときにまとまったお金を貸してもらう相談をする人―誰もいない,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ09_A,w5問9-1_この1年間の経験―自分が離婚した,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_B,w5問9-2_この1年間の経験―配偶者が亡くなった,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_C,w5問9-3_この1年間の経験―父が亡くなった,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_D,w5問9-4_この1年間の経験―母が亡くなった,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_E,w5問9-5_この1年間の経験―配偶者の父が亡くなった,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_F,w5問9-6_この1年間の経験―配偶者の母が亡くなった,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_G,w5問9-7_この1年間の経験―同棲した,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_H,w5問9-8_この1年間の経験―引越しした,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_I,w5問9-9_この1年間の経験―自分が産休・育休を取った,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_J,w5問9-10_この1年間の経験―配偶者が産休・育休を取った,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ09_K,w5問9-11_この1年間の経験―どれもなかった,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_1,w5問10(1)_同居している人数（本人含む）,continuous,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ10_21A,w5問10(2)-1_あなたご自身_世帯主か否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_22A,w5問10(2)-2_同居家族1人目_世帯主化否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_22B,w5_同居家族1人目_性別,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_22C,w5_同居家族1人目_年齢,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_22D,w5問10(2)-2_同居家族1人目_在学中,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_22E,w5問10(2)-2_同居家族1人目_仕事の有無,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_23A,w5問10(2)-3_同居家族2人目_世帯主か否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_23B,w5_同居家族2人目_性別,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_23C,w5_同居家族2人目_年齢,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_23D,w5問10(2)-3_同居家族2人目_在学中,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_23E,w5問10(2)-3_同居家族2人目_仕事の有無,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_24A,w5問10(2)-4_同居家族3人目_世帯主か否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_24B,w5_同居家族3人目_性別,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_24C,w5_同居家族3人目_年齢,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_24D,w5問10(2)-4_同居家族3人目_在学中,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_24E,w5問10(2)-4_同居家族3人目_仕事の有無,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_25A,w5問10(2)-5_同居家族4人目_世帯主か否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_25B,w5_同居家族4人目_性別,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_25C,w5_同居家族4人目_年齢,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_25D,w5問10(2)-5_同居家族4人目_在学中,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_25E,w5問10(2)-5_同居家族4人目_仕事の有無,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_26A,w5問10(2)-6_同居家族5人目_世帯主か否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_26B,w5_同居家族5人目_性別,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_26C,w5_同居家族5人目_年齢,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_26D,w5問10(2)-6_同居家族5人目_在学中,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_26E,w5問10(2)-6_同居家族5人目_仕事の有無,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ10_27A,w5問10(2)-7_同居家族6人目_世帯主か否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_27B,w5_同居家族6人目_性別,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_27C,w5_同居家族6人目_年齢,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_27D,w5問10(2)-7_同居家族6人目_在学中,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_27E,w5問10(2)-7_同居家族6人目_仕事の有無,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_28A,w5問10(2)-8_同居家族7人目_世帯主か否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_28B,w5_同居家族7人目_性別,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_28C,w5_同居家族7人目_年齢,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_28D,w5問10(2)-8_同居家族7人目_在学中,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_28E,w5問10(2)-8_同居家族7人目_仕事の有無,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_29A,w5問10(2)-9_同居家族8人目_世帯主か否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_29B,w5_同居家族8人目_性別,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_29C,w5_同居家族8人目_年齢,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_29D,w5問10(2)-9_同居家族8人目_在学中,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_29E,w5問10(2)-9_同居家族8人目_仕事の有無,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_210A,w5問10(2)-10_同居家族9人目_世帯主か否か,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_210B,w5_同居家族9人目_性別,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_210C,w5_同居家族9人目_年齢,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_210D,w5問10(2)-10_同居家族9人目_在学中,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_210E,w5問10(2)-10_同居家族9人目_仕事の有無,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+dq10_22z,w5_同居家族1人目_続柄,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (relationship of household member 1),04 (label rule) + SCALE_AUDIT check
+dq10_23z,w5_同居家族2人目_続柄,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (relationship of household member 2),04 (label rule) + SCALE_AUDIT check
+dq10_24z,w5_同居家族3人目_続柄,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (relationship of household member 3),04 (label rule) + SCALE_AUDIT check
+dq10_25z,w5_同居家族4人目_続柄,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (relationship of household member 4),04 (label rule) + SCALE_AUDIT check
+dq10_26z,w5_同居家族5人目_続柄,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (relationship of household member 5),04 (label rule) + SCALE_AUDIT check
+dq10_27z,w5_同居家族6人目_続柄,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+dq10_28z,w5_同居家族7人目_続柄,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+dq10_29z,w5_同居家族8人目_続柄,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+dq10_210z,w5_同居家族9人目_続柄,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ10_3,w5問10(3)_もう1人子どもが欲しいか,nominal,,,,,,,indicators,,TRUE,C,parent2007,TRUE,5 = わからない は DK; 指標 1-4,決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ11,w5問11_自分の健康状態,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ12A,w5問12A_過去1ヶ月間―かなり神経質であったこと,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ12B,w5問12B_過去1ヶ月間―どうにもならないくらい気分が落ち込んでいたこと,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ12C,w5問12C_過去1ヶ月間―落ち着いていておだやかな気分であったこと,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ12D,w5問12D_過去1ヶ月間―落ち込んで、憂鬱な気分であったこと,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ12E,w5問12E_過去1ヶ月間―楽しい気分であったこと,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ12F,w5問12F_過去1ヶ月間―健康上の理由で、家事や仕事などが制限されたこと,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ13,w5問13_過去1年間、病気や怪我により活動ができなかった日の有無,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ13S,w5問13_過去1年間、病気や怪我により活動ができなかった日数,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ14A,w5問14_過去1年間の歯科通院日数,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ14B,w5問14_過去1年間の通院（歯科除く）日数,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ14C,w5問14_過去1年間の入院日数,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ15,w5問15_1日に吸うタバコの本数,ordinal,1;2;3;4,,,,,2=1;3=2;4=3;5=4,,,TRUE,A,,TRUE,1 喫煙したことがない と 2 禁煙した をまとめる(現在 0 本); 3-5 を 2-4 に詰める(両波),決定 2026-09-26; SCALE_AUDIT §4.2
+DQ16,w5問16_飲酒の頻度,ordinal,1;2;3;4;5;6;7,,,,,2=1;3=2;4=3;5=4;6=5;7=6;8=7,,,TRUE,A,,TRUE,1 飲めない と 2 禁酒した をまとめる(現在飲まない); 3-8 を 2-7 に詰める(両波),決定 2026-09-26; SCALE_AUDIT §4.2
+DQ17A,w5問17A_中学３年生の頃、両親の喫煙行動ー父親,ordinal,,4,,,,,,,TRUE,,,FALSE,4 = 父母がいなかった を非該当に (SCALE_AUDIT §4.2),SCALE_AUDIT §4.2
+DQ17B,w5問17B_中学３年生の頃、両親の喫煙行動ー母親,ordinal,,4,,,,,,,TRUE,,,FALSE,4 = 父母がいなかった を非該当に,SCALE_AUDIT §4.2
+DQ18A,w5問18A_現在の満足度―仕事,ordinal,,6,,,,,,,TRUE,A,,TRUE,6 = 該当者なし を非該当に,00_config NAP_OVERRIDE
+DQ18B,w5問18B_現在の満足度―結婚生活,ordinal,,6,,,,,,,TRUE,A,,TRUE,6 = 該当者なし を非該当に,00_config NAP_OVERRIDE
+DQ18C,w5問18C_現在の満足度―友人関係,ordinal,,6,,,,,,,TRUE,A,,TRUE,6 = 該当者なし を非該当に,00_config NAP_OVERRIDE
+DQ18D,w5問18D_現在の満足度―あなたの親との関係,ordinal,,6,,,,,,,TRUE,,,FALSE,6 = 該当者なし を非該当に,00_config NAP_OVERRIDE
+DQ18E,w5問18E_現在の満足度―あなたの子との関係,ordinal,,6,,,,,,,TRUE,,,FALSE,6 = 該当者なし を非該当に,00_config NAP_OVERRIDE
+DQ18F,w5問18F_現在の満足度―生活全般,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ19A,w5問19A_日常生じる困難や問題の解決策を見つけることができる,continuous,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ19B,w5問19B_人生で生じる困難や問題のいくつかは向き合い、取り組む価値があると思う,continuous,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ19C,w5問19C_日常生じる困難や問題を理解したり予測したりできる,continuous,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ20A,w5問20A_自分のやりたい仕事ははっきりしている,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ20B,w5問20B_自分の職業能力を向上させたいと思う,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ20C,w5問20C_将来よりも今の生活を楽しみたいと思う,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ20D,w5問20D_社会でうまくやっていけるか不安だ,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ20E,w5問20E_友だちから悩み事を打ち明けられることが多い,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ20F,w5問20F_やりたくない仕事にはつきたくない,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ21,w5問21_現在の暮らしむき,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ22,w5問22_将来の自分の仕事や生活に希望があるか,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ23A,w5問23A_自分にとっての重要度―仕事で成功すること,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ23B,w5問23B_自分にとっての重要度―結婚して幸せな家庭生活を送ること,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ23C,w5問23C_自分にとっての重要度―お金持ちになること,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ23D,w5問23D_自分にとっての重要度―親友を持つこと,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ23E,w5問23E_自分にとっての重要度―子どもには自分よりも恵まれた機会を与えること,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ23F,w5問23F_自分にとっての重要度―安定した仕事につくこと,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ24A,w5問24A_自分の考えを人に説明することができるか,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ24B,w5問24B_よく知らない人と自然に会話することができるか,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ24C,w5問24C_まわりの人をまとめてひっぱっていくことができるか,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ24D,w5問24D_面白いことを言って人を楽しませることができるか,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ25A,w5問25A_日本の社会には希望がある,ordinal,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ25B,w5問25B_日本の所得の格差は大きすぎる,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ25C,w5問25C_どんな学校を出たかによって、人生がほとんど決まってしまう,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ25D,w5問25D_仕事や事業でいったん失敗すると、人生のやり直しがしにくい,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ25E,w5問25E_所得格差が大きいことは、日本の繁栄に必要である,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ25F,w5問25F_地位や富を得るためには、裕福な家庭の出身であることが重要だ,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ26,w5問26_自分自身の階層の位置づけ,continuous,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ27,w5問27_10年後の自分の暮らしむき,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ28A,w5問28A_男性の仕事は収入を得ること、女性の仕事や家庭と家族の面倒をみることだ,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ28B,w5問28B_母親が外で働くと、小学校に通う前の子どもはつらい思いをしやすい,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ28C,w5問28C_女性が自立するためには、仕事を持つのが一番よい,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ28D,w5問28D_一般的に言って、結婚している人のほうが、結婚していない人より幸せだ,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ28E,w5問28E_子どもがいると、夫婦の自由な生活の妨げになる,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ28F,w5問28F_不幸せな結婚生活を続けるくらいなら、離婚した方がよい,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ29A,w5問29A_日本の防衛力はもっと強化するべきだ,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ29B,w5問29B_日米安保体制は現在よりもっと強化するべきだ,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ29C,w5問29C_収入の多い人と少ない人の所得格差を縮めるのは政府の責任だ,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ29D,w5問29D_公共事業による地方の雇用確保は必要だ,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ29E,w5問29E_社会保障は財政が苦しくても極力充実するべきだ,ordinal,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ29F,w5問29F_お年寄りや心身の不自由な人は別として、すべての人は社会福祉をあてにしないで生活しなければならない,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ30,w5問30_ふだん支持している政党,nominal,1;2;3;4;5;6;8;9,,,,,7=8,indicators,,TRUE,A,,TRUE,"10 = わからない は DK; コード 7 は 2011 = みんなの党、2007 (ZQ42) = 新党日本 で意味が違う(2007・2011 調査票と PM160_label.txt で確認 2026-09-29) → 両波で 8 その他の政党にまとめる(7=8); 指標 1-6, 8, 9 の 8 本",決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3; 2026-09-29 ラベル照合(悩み 4)
+DQ31,w5問31_政治上の出来事への関心,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ32,w5問32_参議院比例代表投票先政党(２０１０年）,nominal,,,10,,,,indicators,,TRUE,,,FALSE,10 = 忘れた を DK に; 指標 1-9; 2007 に対応する設問なし(2010 年参院選の投票),決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ33_1,w5問33(1)_衆議院比例代表投票先政党(仮定投票）,nominal,,,,,,,indicators,,TRUE,,,FALSE,9 = わからない は DK; 指標 1-8,決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ33_2,w5問33(2)_上記の選挙で投票に行くか,ordinal,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ34A,w5問34A_自民党への感情,continuous,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ34B,w5問34B_民主党への感情,continuous,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ34C,w5問34C_公明党への感情,continuous,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ34D,w5問34D_共産党への感情,continuous,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ34E,w5問34E_社民党への感情,continuous,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ34F,w5問34F_日本への感情,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ34G,w5問34G_アメリカ合衆国への感情,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ34H,w5問34H_中国への感情,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ35A,w5問35_過去1年間の収入―本人,continuous,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ35B,w5問35_過去1年間の収入―配偶者,ordinal,1;2;3;4;5;6;7;8;9;10;11;12;13,15,,,,,,,TRUE,C,married2007,TRUE,15 = 配偶者はいない を非該当に; 14 = わからない は DK。除外から戻す。入所波: 2007 ZQ47B は同じ 13 コード(PM160_label.txt で照合 2026-09-29; 1 なし/年収なし、13 の表記だけ違う)、2007 は既婚者に配偶者の収入を聞くので区分 C(married2007; DQ44・DQ45 と同じ扱い),SCALE_AUDIT §3; 2026-09-29 ラベル照合
+DQ35C,w5問35_過去1年間の収入―世帯全体,continuous,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ36_A,w5問36-1_世帯の収入源―賃金・給料,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_B,w5問36-2_世帯の収入源―農林漁業からの事業収入,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_C,w5問36-3_世帯の収入源―農林漁業以外の事業収入,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_D,w5問36-4_世帯の収入源―内職収入,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_E,w5問36-5_世帯の収入源―家賃・地代,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_F,w5問36-6_世帯の収入源―利子・配当,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_G,w5問36-7_世帯の収入源―仕送り,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_H,w5問36-8_世帯の収入源―年金（除く障害年金）・恩給,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_I,w5問36-9_世帯の収入源―障害年金,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_J,w5問36-10_世帯の収入源―雇用保険（失業等給付）,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_K,w5問36-11_世帯の収入源―生活保護,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_L,w5問36-12_世帯の収入源―児童扶養手当,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ36_M,w5問36-13_世帯の収入源―その他,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ37,w5問37_世帯で所有している資産の総額,ordinal,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ38,w5問38_住居費・ローンを自分で支払っているか,binary,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ38S,w5問38_住居費・ローンの月当たり支払額（千円）,continuous,,,,,,,,,TRUE,A,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ39,w5問39_現在の住居の形態,nominal,,,,,,,indicators,,TRUE,A,,TRUE,指標 1-8,決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ39_A,w5問39付問-1_持家の所有者―本人,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ39_B,w5問39付問-2_持家の所有者―配偶者,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ39_C,w5問39付問-3_持家の所有者―父または母,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ39_D,w5問39付問-4_持家の所有者―配偶者の父または母,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ39_E,w5問39付問-5_持家の所有者―その他,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ40,w5問40_今後1年間の引越し予定有無,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ41,w5問41_資産の相続・贈与の有無,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ41S,w5問41付問_相続・贈与された財産の合計金額,ordinal,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ42_A,w5問42-1_企業の健康保険組合,binary,,,,,,,,not:DQ42_G=1,TRUE,,,FALSE,問42 で 7 わからない と答えた人(DQ42_G = 1)を欠損に,SCALE_AUDIT §4.3
+DQ42_B,w5問42-2_協会けんぽ,binary,,,,,,,,not:DQ42_G=1,TRUE,,,FALSE,問42 で 7 わからない と答えた人(DQ42_G = 1)を欠損に,SCALE_AUDIT §4.3
+DQ42_C,w5問42-3_共済組合,binary,,,,,,,,not:DQ42_G=1,TRUE,,,FALSE,問42 で 7 わからない と答えた人(DQ42_G = 1)を欠損に,SCALE_AUDIT §4.3
+DQ42_D,w5問42-4_国民健康保険,binary,,,,,,,,not:DQ42_G=1,TRUE,,,FALSE,問42 で 7 わからない と答えた人(DQ42_G = 1)を欠損に,SCALE_AUDIT §4.3
+DQ42_E,w5問42-5_その他,binary,,,,,,,,not:DQ42_G=1,TRUE,,,FALSE,問42 で 7 わからない と答えた人(DQ42_G = 1)を欠損に,SCALE_AUDIT §4.3
+DQ42_F,w5問42-6_いずれも加入していない,binary,,,,,,,,not:DQ42_G=1,TRUE,,,FALSE,問42 で 7 わからない と答えた人(DQ42_G = 1)を欠損に,SCALE_AUDIT §4.3
+DQ42_G,w5問42-7_わからない,exclude,,,,,,,,,FALSE,,,FALSE,「わからない」の選択肢そのものの指標。件数から外す,SCALE_AUDIT §4.3
+DQ42_AS,w5問42付問-1_自分で、もしくは自分の職場を通じて,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ42_BS,w5問42付問-2_配偶者の職場を通じて,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ42_CS,w5問42付問-3_親の職場を通じて,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ42_DS,w5問42付問-4_その他,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ43,w5問43_婚姻状態,nominal,,,,,,,indicators,,TRUE,A,,TRUE,指標 1-4,決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ44_1,w5問44(1)_配偶者職・働き方,nominal,,,,,,,indicators,,TRUE,C,married2007,TRUE,指標 1-9,決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ44_2,w5問44(2)_配偶者職・職業―大分類(プリコード),nominal,,,,,,,indicators,,TRUE,C,married2007,TRUE,指標 1-8,決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+dq44_2c,w5問44(2)_配偶者職・職業―小分類（07版）,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (spouse occupation minor-group code),04 (label rule) + SCALE_AUDIT check
+dq44_2l,w5問44(2)_配偶者職・職業―大分類（アフターコード）,exclude,,,,,,,,,FALSE,,,FALSE,nominal code (spouse occupation major group; after-code),04 (label rule) + SCALE_AUDIT check
+DQ44_3,w5問44(3)_配偶者職・役職,ordinal,,7,,,,,,,TRUE,C,married2007,TRUE,7 = その他 を非該当に,SCALE_AUDIT §4.2; EC_ITEMS_REVIEW §2
+DQ44_4A,w5問44(4)A_配偶者職・従事時間（1日あたり）,continuous,,,,,,,,,TRUE,D,,FALSE,入所波補正の主分析から外す(決定 2026-09-27),04 (label rule) + SCALE_AUDIT check
+DQ44_4M,w5問44(4)B_配偶者職・従事日数（月あたり）,continuous,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ44_4Y,w5問44(4)C-2_配偶者職・家に帰ってくる時間―時,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (hour of spouse's return-home time),04 (label rule) + SCALE_AUDIT check
+DQ44_4Z,w5問44(4)C-3_配偶者職・家に帰ってくる時間―分,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (minute of spouse's return-home time),04 (label rule) + SCALE_AUDIT check
+DQ44_5,w5問44(5)_配偶者職・企業規模,ordinal,,7,,,,,,,TRUE,C,married2007,TRUE,7 = 官公庁 を非該当に; 8 = わからない は DK,SCALE_AUDIT §4.2; EC_ITEMS_REVIEW §2
+DQ45A,w5問45A_頻度―配偶者が食事の用意,ordinal,,,,,,,,,TRUE,C,married2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ45B,w5問45B_頻度―配偶者が洗濯,ordinal,,,,,,,,,TRUE,C,married2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ45C,w5問45C_頻度―配偶者が家の掃除,ordinal,,,,,,,,,TRUE,C,married2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ45D,w5問45D_頻度―配偶者が日用品・食料品の買い物,ordinal,,,,,,,,,TRUE,C,married2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ45E,w5問45E_頻度―夫婦で一緒に食事をする,ordinal,,,,,,,,,TRUE,C,married2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ45F,w5問45F_頻度―夫婦で話をする,ordinal,,,,,,,,,TRUE,C,married2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ46,w5問46_婚前同棲期間の有無,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ46Y,w5問46_婚前同棲期間（年）,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ46M,w5問46_婚前同棲期間（月）,exclude,,,,,,,,,FALSE,,,FALSE,duration component (months beyond whole years of premarital cohabitation),04 (label rule) + SCALE_AUDIT check
+DQ47,w5問47_婚姻届出の有無,ordinal,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ48_1A,w5問48(1)_配偶者の生まれ―元号,exclude,,,,,,,,,FALSE,,,FALSE,date component (calendar era of spouse's birth year),04 (label rule) + SCALE_AUDIT check
+DQ48_1Y,w5問48(1)_配偶者の生まれ―年,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ48_1M,w5問48(1)_配偶者の生まれ―月,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ48_2,w5問48(2)_配偶者の最後に通ったまたは通学中の学校,ordinal,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_1AA,w5問49(1)_配偶者との交際開始時―元号,exclude,,,,,,,,,FALSE,,,FALSE,date component (calendar era of the year dating began),04 (label rule) + SCALE_AUDIT check
+DQ49_1AY,w5問49(1)_配偶者との交際開始時―年,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_1AM,w5問49(1)_配偶者との交際開始時―月,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_1BA,w5問49(1)_結婚時―元号,exclude,,,,,,,,,FALSE,,,FALSE,date component (calendar era of the marriage year),04 (label rule) + SCALE_AUDIT check
+DQ49_1BY,w5問49(1)_結婚時―年,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_1BM,w5問49(1)_結婚時―月,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2A,w5問49(2)-1_配偶者と知り合ったきっかけ―親・きょうだいの紹介で,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2B,w5問49(2)-2_配偶者と知り合ったきっかけ―親・きょうだい以外の親族の紹介で,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2C,w5問49(2)-3_配偶者と知り合ったきっかけ―友人・知人・幼なじみの紹介で,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2D,w5問49(2)-4_配偶者と知り合ったきっかけ―職場の同僚・上司の紹介で,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2E,w5問49(2)-5_配偶者と知り合ったきっかけ―職場で,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2F,w5問49(2)-6_配偶者と知り合ったきっかけ―学校での授業・部活・サークル活動で,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2G,w5問49(2)-7_配偶者と知り合ったきっかけ―アルバイト先で,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2H,w5問49(2)-8_配偶者と知り合ったきっかけ―趣味・習い事で,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2I,w5問49(2)-9_配偶者と知り合ったきっかけ―合コンで,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2J,w5問49(2)-10_配偶者と知り合ったきっかけ―お見合いで,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2K,w5問49(2)-11_配偶者と知り合ったきっかけ―お見合いパーティーで,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2L,w5問49(2)-12_配偶者と知り合ったきっかけ―インターネット・携帯を通して,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2M,w5問49(2)-13_配偶者と知り合ったきっかけ―街中や旅先で,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2N,w5問49(2)-14_配偶者と知り合ったきっかけ―結婚相談所や結婚仲介サービスで,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2O,w5問49(2)-15_配偶者と知り合ったきっかけ―その他,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2P,w5問49(2)-RC_配偶者と知り合ったきっかけ―その他（地域のサークル等）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2R,w5問49(2)-RC_配偶者と知り合ったきっかけ―その他（幼なじみ）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2S,w5問49(2)-RC_配偶者と知り合ったきっかけ―その他（仕事関係）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2T,w5問49(2)-RC_配偶者と知り合ったきっかけ―その他（宗教関係）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2V,w5問49(2)-RC_配偶者と知り合ったきっかけ―その他（結婚式で）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2W,w5問49(2)-RC_配偶者と知り合ったきっかけ―その他（イベントで）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ49_2Z,w5問49(2)-RC_配偶者と知り合ったきっかけ―その他（偶然の出会い）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ50,w5問50_結婚についてどのように考えているか,ordinal,,,5,,,,,,TRUE,B,,TRUE,5 = 結婚について考えていない を DK 相当の特殊コードに(両波),SCALE_AUDIT §4.2; EC_ITEMS_REVIEW
+DQ51A,w5問51A_結婚相手について重視する点―性格・人柄,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ51B,w5問51B_結婚相手について重視する点―容姿・外見,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ51C,w5問51C_結婚相手について重視する点―学歴,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ51D,w5問51D_結婚相手について重視する点―年収,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ51E,w5問51E_結婚相手について重視する点―年齢,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ51DA,w5問51D_結婚相手の年収下限,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ51DB,w5問51D_結婚相手の年収上限,continuous,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ51EA,w5問51E_結婚相手の年齢下限,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ51EB,w5問51E_結婚相手の年齢上限,continuous,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_1,w5問52(1)_よく話をする異性の数,ordinal,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ52_2,w5問52(2)_交際してみたい異性と出会うきっかけ,ordinal,1;2;3;4,,,,,,,,TRUE,B,,TRUE,4 件法の順序尺度。除外から戻す,SCALE_AUDIT §3; EC_ITEMS_REVIEW §2
+DQ52_3A,w5問52(3)-1_この1年間に交際してみたい異性と出会うためにやったこと―親・きょうだいに紹介を依頼,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3B,w5問52(3)-2_この1年間に交際してみたい異性と出会うためにやったこと―親・きょうだい以外の親族に紹介を依頼,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3C,w5問52(3)-3_この1年間に交際してみたい異性と出会うためにやったこと―友人・知人・幼なじみに紹介を依頼,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3D,w5問52(3)-4_この1年間に交際してみたい異性と出会うためにやったこと―職場・アルバイト先の同僚・上司に紹介を依頼,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3E,w5問52(3)-5_この1年間に交際してみたい異性と出会うためにやったこと―学校の授業・部活・サークル活動などに参加,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3F,w5問52(3)-6_この1年間に交際してみたい異性と出会うためにやったこと―趣味・習い事に参加,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3G,w5問52(3)-7_この1年間に交際してみたい異性と出会うためにやったこと―合コンに参加,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3H,w5問52(3)-8_この1年間に交際してみたい異性と出会うためにやったこと―お見合いに参加,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3I,w5問52(3)-9_この1年間に交際してみたい異性と出会うためにやったこと―お見合いパーティーに参加,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3J,w5問52(3)-10_この1年間に交際してみたい異性と出会うためにやったこと―インターネット・携帯を通してさがす,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3K,w5問52(3)-11_この1年間に交際してみたい異性と出会うためにやったこと―街中や旅先で声をかける,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3L,w5問52(3)-12_この1年間に交際してみたい異性と出会うためにやったこと―結婚相談所や結婚仲介サービスに登録,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3M,w5問52(3)-13_この1年間に交際してみたい異性と出会うためにやったこと―その他,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ52_3N,w5問52(3)-14_この1年間に交際してみたい異性と出会うためにやったこと―特にない,binary,,,,,,,,,TRUE,D,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ53,w5問53_現在交際している人はいるか,nominal,,,,,,,indicators,,TRUE,B,,TRUE,指標 1-3 (婚約者/交際相手/いない),決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ53S,w5問53付問_過去に交際していた人がいたか,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ54_1Y,w5問54(1)_交際期間―年,exclude,,,,,,,,,FALSE,C,partner2007,TRUE,期間の年の欄。月と合成した dq54_1_months を使う,SCALE_AUDIT §4.4
+DQ54_1M,w5問54(1)_交際期間―月,exclude,,,,,,,,,FALSE,,,FALSE,期間の月の欄。dq54_1_months の部品,SCALE_AUDIT §4.4
+DQ54_2A,w5問54(2)-1_婚約者・交際相手と知り合ったきっかけ―親・きょうだいの紹介で,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2B,w5問54(2)-2_婚約者・交際相手と知り合ったきっかけ―親・きょうだい以外の親族の紹介で,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2C,w5問54(2)-3_婚約者・交際相手と知り合ったきっかけ―友人・知人・幼なじみの紹介で,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2D,w5問54(2)-4_婚約者・交際相手と知り合ったきっかけ―職場の同僚・上司の紹介で,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2E,w5問54(2)-5_婚約者・交際相手と知り合ったきっかけ―職場で,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2F,w5問54(2)-6_婚約者・交際相手と知り合ったきっかけ―学校での授業・部活・サークル活動で,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2G,w5問54(2)-7_婚約者・交際相手と知り合ったきっかけ―アルバイト先で,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2H,w5問54(2)-8_婚約者・交際相手と知り合ったきっかけ―趣味・習い事で,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2I,w5問54(2)-9_婚約者・交際相手と知り合ったきっかけ―合コンで,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2J,w5問54(2)-10_婚約者・交際相手と知り合ったきっかけ―お見合いで,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2K,w5問54(2)-11_婚約者・交際相手と知り合ったきっかけ―お見合いパーティーで,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2L,w5問54(2)-12_婚約者・交際相手と知り合ったきっかけ―インターネット・携帯を通して,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2M,w5問54(2)-13_婚約者・交際相手と知り合ったきっかけ―街中や旅先で,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2N,w5問54(2)-14_婚約者・交際相手と知り合ったきっかけ―結婚相談所や結婚仲介サービスで,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2O,w5問54(2)-15_婚約者・交際相手と知り合ったきっかけ―その他,binary,,,,,,,,,TRUE,C,partner2007,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2P,w5問54(2)-RC_婚約者・交際相手と知り合ったきっかけ―その他(地域のサークル等),binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2R,w5問54(2)-RC_婚約者・交際相手と知り合ったきっかけ―その他（幼なじみ）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2S,w5問54(2)-RC_婚約者・交際相手と知り合ったきっかけ―その他（仕事関係）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2U,w5問54(2)-RC_婚約者・交際相手と知り合ったきっかけ―その他（病院で）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2V,w5問54(2)-RC_婚約者・交際相手と知り合ったきっかけ―その他（結婚式で）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ54_2W,w5問54(2)-RC_婚約者・交際相手と知り合ったきっかけ―その他（イベントで）,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ54_3,w5問54(3)_婚約者・交際相手最終学歴,ordinal,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ54_4,w5問54(4)_婚約者・交際相手と会う頻度,ordinal,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ54_4A,w5問54(4)付問A_婚約者・交際相手がする頻度ー食事の用意,ordinal,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ54_4B,w5問54(4)付問B_婚約者・交際相手がする頻度ー洗濯,ordinal,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ54_4C,w5問54(4)付問C_婚約者・交際相手がする頻度ー家の掃除,ordinal,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ54_4D,w5問54(4)付問D_婚約者・交際相手がする頻度ー日用品・食料品の買い物,ordinal,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ55_A,w5問55-1_現在独身でいる理由―結婚するにはまだ若すぎるから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_B,w5問55-2_現在独身でいる理由―結婚するには年をとりすぎているから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_C,w5問55-3_現在独身でいる理由―結婚する必要性をまだ感じないから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_D,w5問55-4_現在独身でいる理由―今は、仕事（または学業）にうちこみたいから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_E,w5問55-5_現在独身でいる理由―今は、趣味や娯楽を楽しみたいから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_F,w5問55-6_現在独身でいる理由―適当な相手にまだめぐり会わないから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_G,w5問55-7_現在独身でいる理由―独身の自由さや気楽さを失いたくないから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_H,w5問55-8_現在独身でいる理由―家の居心地がいいから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_I,w5問55-9_現在独身でいる理由―異性とつきあう時間がないから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_J,w5問55-10_現在独身でいる理由―異性とうまくつきあえないから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_K,w5問55-11_現在独身でいる理由―結婚後の経済状況に不安があるから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_L,w5問55-12_現在独身でいる理由―現在の交際をもっと深めたいから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_M,w5問55-13_現在独身でいる理由―現在の交際相手との結婚を決めるタイミング、きっかけがないから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_N,w5問55-14_現在独身でいる理由―交際相手が結婚を望んでいないから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_O,w5問55-15_現在独身でいる理由―結婚資金が足りないから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_P,w5問55-16_現在独身でいる理由―親や周囲が結婚に同意しないから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_Q,w5問55-17_現在独身でいる理由―結婚後の生活全般に不安があるから,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_R,w5問55-18_現在独身でいる理由―その他,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+DQ55_S,w5問55-19_現在独身でいる理由―現在の交際相手ともうすぐ結婚する予定,binary,,,,,,,,,TRUE,B,,TRUE,,04 (label rule) + SCALE_AUDIT check
+dq55_v,w5問55-RC_現在独身でいる理由―その他(子どもに問題があるから),binary,,,,,,,,,TRUE,D,,FALSE,入所波補正の主分析から外す(決定 2026-09-27),04 (label rule) + SCALE_AUDIT check
+dq55_w,w5問55-RC_現在独身でいる理由―その他(健康問題があるから),binary,,,,,,,,,TRUE,D,,FALSE,入所波補正の主分析から外す(決定 2026-09-27),04 (label rule) + SCALE_AUDIT check
+DQ56_A,w5問56-1_10年後の働き方―正社員・正職員として働いていたい,binary,,,,,,,,not:DQ56_I=1,TRUE,A,,TRUE,問56 で 9 わからない と答えた人(DQ56_I = 1)を欠損に,SCALE_AUDIT §4.3
+DQ56_B,w5問56-2_10年後の働き方―自分で事業をおこしていたい,binary,,,,,,,,not:DQ56_I=1,TRUE,A,,TRUE,問56 で 9 わからない と答えた人(DQ56_I = 1)を欠損に,SCALE_AUDIT §4.3
+DQ56_C,w5問56-3_10年後の働き方―親の家業を継いでいたい,binary,,,,,,,,not:DQ56_I=1,TRUE,A,,TRUE,問56 で 9 わからない と答えた人(DQ56_I = 1)を欠損に,SCALE_AUDIT §4.3
+DQ56_D,w5問56-4_10年後の働き方―独立して一人で仕事をしていたい,binary,,,,,,,,not:DQ56_I=1,TRUE,A,,TRUE,問56 で 9 わからない と答えた人(DQ56_I = 1)を欠損に,SCALE_AUDIT §4.3
+DQ56_E,w5問56-5_10年後の働き方―アルバイトやパートで働いていたい,binary,,,,,,,,not:DQ56_I=1,TRUE,A,,TRUE,問56 で 9 わからない と答えた人(DQ56_I = 1)を欠損に,SCALE_AUDIT §4.3
+DQ56_F,w5問56-6_10年後の働き方―専業主婦・主夫でいたい,binary,,,,,,,,not:DQ56_I=1,TRUE,A,,TRUE,問56 で 9 わからない と答えた人(DQ56_I = 1)を欠損に,SCALE_AUDIT §4.3
+DQ56_G,w5問56-7_10年後の働き方―働かないでいたい,binary,,,,,,,,not:DQ56_I=1,TRUE,A,,TRUE,問56 で 9 わからない と答えた人(DQ56_I = 1)を欠損に,SCALE_AUDIT §4.3
+DQ56_H,w5問56-8_10年後の働き方―その他,binary,,,,,,,,not:DQ56_I=1,TRUE,A,,TRUE,問56 で 9 わからない と答えた人(DQ56_I = 1)を欠損に,SCALE_AUDIT §4.3
+DQ56_I,w5問56-9_10年後の働き方―わからない,exclude,,,,,,,,,FALSE,A,,TRUE,「わからない」の選択肢そのものの指標。件数から外す,SCALE_AUDIT §4.3
+DQ57A,w5問57A_起床時間,binary,,,,,,,,,TRUE,B,,TRUE,回答形式 1 決まっている / 2 決まっていない; w1 ZQ02A の 3 は欠損に,EC_ITEMS_REVIEW §4.2
+DQ57AY,w5問57A_起床時間―時,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (hour of wake time; the time enters as dq57a24),04 (label rule) + SCALE_AUDIT check
+DQ57AZ,w5問57A_起床時間―分,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (minute of wake time; the time enters as dq57a24),04 (label rule) + SCALE_AUDIT check
+DQ57B,w5問57B_家を出る時間,nominal,,,,,,,indicators,,TRUE,B,,TRUE,指標 1-3 (決まっている/決まっていない/主に家にいる),決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ57BY,w5問57B_家を出る時間―時,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (hour of leave-home time; the time enters as dq57b48),04 (label rule) + SCALE_AUDIT check
+DQ57BZ,w5問57B_家を出る時間―分,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (minute of leave-home time; the time enters as dq57b48),04 (label rule) + SCALE_AUDIT check
+DQ57C,w5問57C_家に帰ってくる時間,nominal,,,,,,,indicators,,TRUE,B,,TRUE,指標 1-3,決定 2026-09-26 (名義の単一選択は 0/1 指標); SCALE_AUDIT §3
+DQ57CY,w5問57C_家に帰ってくる時間―時,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (hour of return-home time; the time enters as dq57c48),04 (label rule) + SCALE_AUDIT check
+DQ57CZ,w5問57C_家に帰ってくる時間―分,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (minute of return-home time; the time enters as dq57c48),04 (label rule) + SCALE_AUDIT check
+DQ57D,w5問57D_就寝する時間,binary,,,,,,,,,TRUE,B,,TRUE,回答形式 1 決まっている / 2 決まっていない; w1 ZQ02D の 3 は欠損に,EC_ITEMS_REVIEW §4.2
+DQ57DY,w5問57D_就寝する時間―時,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (hour of bed time; the time enters as dq57d48),04 (label rule) + SCALE_AUDIT check
+DQ57DZ,w5問57D_就寝する時間―分,exclude,,,,,,,,,FALSE,,,FALSE,clock-time component (minute of bed time; the time enters as dq57d48),04 (label rule) + SCALE_AUDIT check
+dq57a24,w5起床24時制,exclude,,,,,,,,,FALSE,B,,TRUE,配布の時刻変数(時だけの整数; 波で処理が違う)。dq57*_hr に置き換え,EC_ITEMS_REVIEW §4
+dq57b24,w5出宅24時制,exclude,,,,,,,,,FALSE,,,FALSE,配布の時刻変数(時だけの整数; 波で処理が違う)。dq57*_hr に置き換え,EC_ITEMS_REVIEW §4
+dq57c24,w5帰宅24時制,exclude,,,,,,,,,FALSE,,,FALSE,配布の時刻変数(時だけの整数; 波で処理が違う)。dq57*_hr に置き換え,EC_ITEMS_REVIEW §4
+dq57d24,w5就寝24時制,exclude,,,,,,,,,FALSE,,,FALSE,配布の時刻変数(時だけの整数; 波で処理が違う)。dq57*_hr に置き換え,EC_ITEMS_REVIEW §4
+dq57b48,w5出宅48時制,exclude,,,,,,,,,FALSE,B,,TRUE,配布の時刻変数(時だけの整数; 波で処理が違う)。dq57*_hr に置き換え,EC_ITEMS_REVIEW §4
+dq57c48,w5帰宅48時制,exclude,,,,,,,,,FALSE,B,,TRUE,配布の時刻変数(時だけの整数; 波で処理が違う)。dq57*_hr に置き換え,EC_ITEMS_REVIEW §4
+dq57d48,w5就寝48時以上制,exclude,,,,,,,,,FALSE,B,,TRUE,配布の時刻変数(時だけの整数; 波で処理が違う)。dq57*_hr に置き換え,EC_ITEMS_REVIEW §4
+DQ58A_1,w5問58A-1_知り合いにいる職業ー家族・親族にー弁護士,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_2,w5問58A-2_知り合いにいる職業ー家族・親族にー中学校・高校の職員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_3,w5問58A-3_知り合いにいる職業ー家族・親族にー警察官,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_4,w5問58A-4_知り合いにいる職業ー家族・親族にー銀行員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_5,w5問58A-5_知り合いにいる職業ー家族・親族にー大企業の社長・役員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_6,w5問58A-6_知り合いにいる職業ー家族・親族にータクシー運転手,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_7,w5問58A-7_知り合いにいる職業ー家族・親族にー新聞記者,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_8,w5問58A-8_知り合いにいる職業ー家族・親族にー議員(国または地方),binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_9,w5問58A-9_知り合いにいる職業ー家族・親族にー農家,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_10,w5問58A-10_知り合いにいる職業ー家族・親族にー地方公務員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_11,w5問58A-11_知り合いにいる職業ー家族・親族にー医師,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_12,w5問58A-12_知り合いにいる職業ー家族・親族にー理容師・美容師,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_13,w5問58A-13_知り合いにいる職業ー家族・親族にー中小企業の社長,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_14,w5問58A-14_知り合いにいる職業ー家族・親族にーコンピュータプログラマー,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_15,w5問58A-15_知り合いにいる職業ー家族・親族にー看護師(看護婦・看護師),binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58A_16,w5問58A-16_知り合いにいる職業ー友人・知人にー当てはまる人はいない,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_1,w5問58B-1_知り合いにいる職業ー友人・知人にー弁護士,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_2,w5問58B-2_知り合いにいる職業ー友人・知人にー中学校・高校の職員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_3,w5問58B-3_知り合いにいる職業ー友人・知人にー警察官,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_4,w5問58B-4_知り合いにいる職業ー友人・知人にー銀行員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_5,w5問58B-5_知り合いにいる職業ー友人・知人にー大企業の社長・役員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_6,w5問58B-6_知り合いにいる職業ー友人・知人にータクシー運転手,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_7,w5問58B-7_知り合いにいる職業ー友人・知人にー新聞記者,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_8,w5問58B-8_知り合いにいる職業ー友人・知人にー議員(国または地方),binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_9,w5問58B-9_知り合いにいる職業ー友人・知人にー農家,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_10,w5問58B-10_知り合いにいる職業ー友人・知人にー地方公務員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_11,w5問58B-11_知り合いにいる職業ー友人・知人にー医師,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_12,w5問58B-12_知り合いにいる職業ー友人・知人にー理容師・美容師,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_13,w5問58B-13_知り合いにいる職業ー友人・知人にー中小企業の社長,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_14,w5問58B-14_知り合いにいる職業ー友人・知人にーコンピュータプログラマー,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_15,w5問58B-15_知り合いにいる職業ー友人・知人にー看護師(看護婦・看護師),binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58B_16,w5問58B-16_知り合いにいる職業ー友人・知人にー当てはまる人はいない,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_1,w5問58C-1_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー弁護士,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_2,w5問58C-2_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー中学校・高校の職員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_3,w5問58C-3_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー警察官,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_4,w5問58C-4_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー銀行員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_5,w5問58C-5_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー大企業の社長・役員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_6,w5問58C-6_知り合いにいる職業ー家族・親族・友人を通して紹介可能ータクシー運転手,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_7,w5問58C-7_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー新聞記者,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_8,w5問58C-8_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー議員(国または地方),binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_9,w5問58C-9_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー農家,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_10,w5問58C-10_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー地方公務員,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_11,w5問58C-11_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー医師,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_12,w5問58C-12_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー理容師・美容師,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_13,w5問58C-13_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー中小企業の社長,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_14,w5問58C-14_知り合いにいる職業ー家族・親族・友人を通して紹介可能ーコンピュータプログラマー,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_15,w5問58C-15_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー看護師(看護婦・看護師),binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ58C_16,w5問58C-16_知り合いにいる職業ー家族・親族・友人を通して紹介可能ー当てはまる人はいない,binary,,,,,,,,,TRUE,,,FALSE,,04 (label rule) + SCALE_AUDIT check
+DQ73_A,w5問73-1_調査に協力する理由ー役に立ちたいと思ったから,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ73_B,w5問73-2_調査に協力する理由ー内容がおもしろそうだと思ったから,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ73_C,w5問73-3_調査に協力する理由ー大学が行っている調査だから,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ73_D,w5問73-4_調査に協力する理由ーなんとなく,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ73_E,w5問73-5_調査に協力する理由ー特に断る理由がなかったから,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ73_F,w5問73-6_調査に協力する理由ーその他,binary,,,,,,,,,TRUE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+DQ75,w5問75_自由回答,exclude,,,,,,,,,FALSE,,,FALSE,outside the item universe in the 2026-09-24 run (n thresholds or degenerate),04
+dq57a_hr,起床時刻(時; 分を含む),continuous,,,,,,,"clock:DQ57AX,DQ57AY,DQ57AZ,wake",,TRUE,B,,TRUE,派生項目(構成要素から両波同じ規則で作る; w1 の部品は 15_entry_overrides.csv),EC_ITEMS_REVIEW §4.2
+dq57b_hr,家を出る時刻(時),continuous,,,,,,,"clock:DQ57BX,DQ57BY,DQ57BZ,leave",,TRUE,B,,TRUE,派生項目(構成要素から両波同じ規則で作る; w1 の部品は 15_entry_overrides.csv),EC_ITEMS_REVIEW §4.2
+dq57c_hr,帰宅時刻(時; 家を出る時刻より前なら +24),continuous,,,,,,,"clock:DQ57CX,DQ57CY,DQ57CZ,return,dq57b_hr",,TRUE,B,,TRUE,派生項目(構成要素から両波同じ規則で作る; w1 の部品は 15_entry_overrides.csv),EC_ITEMS_REVIEW §4.2
+dq57d_hr,"就寝時刻(時; 0-11 時は +24, 午後12時は 24)",continuous,,,,,,,"clock:DQ57DX,DQ57DY,DQ57DZ,bed",,TRUE,B,,TRUE,派生項目(構成要素から両波同じ規則で作る; w1 の部品は 15_entry_overrides.csv),EC_ITEMS_REVIEW §4.2
+dq57d_hr_s12,就寝時刻(感度: 午後12時を欠損に),continuous,,,,,,,"clock:DQ57DX,DQ57DY,DQ57DZ,bed_s12",,FALSE,B,,TRUE,派生項目(構成要素から両波同じ規則で作る; w1 の部品は 15_entry_overrides.csv); 感度分析用(件数の外),EC_ITEMS_REVIEW §4.2
+dq54_1_months,交際期間(月数 = 年×12 + 月),continuous,,,,,,,"months:DQ54_1Y,DQ54_1M",,TRUE,C,partner2007,TRUE,派生項目(構成要素から両波同じ規則で作る; w1 の部品は 15_entry_overrides.csv),SCALE_AUDIT §4.4

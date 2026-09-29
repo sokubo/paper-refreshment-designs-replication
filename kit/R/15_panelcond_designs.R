@@ -16,6 +16,10 @@
 #              または "any"(w5 回答者全員 = 04 のリスク集合; 用量 ≤ 4 の混合)。既定は両方。
 # 入所波(w1)の対応変数: jlps_docs/varmap_w1-19.csv の w1/w5 列 + 15_entry_overrides.csv(手動)。
 #   値ラベル集合(特殊コードを除く)が w1 と w5 で一致する項目だけ EC を計算(不一致は 15_ec_unavailable.csv に列挙)。
+#   v1.0 (2026-09-28): 04 が R/15_item_scale.csv で決めた尺度・特殊コード・再符号化を w1 側にも同じく当てる。名義の指標は
+#   親設問の w1 変数から同じコードの指標を作り、派生項目(時刻・交際期間)は w1 の構成要素から同じ規則で作る。区分 C の項目は
+#   入所波の差 δ を 2007 年の該当者(15_entry_subgroups.csv)の中で計算する。区分 D の項目(と区分のない項目)は EC の主分析
+#   (件数)から外し、感度(15_ec_scope_sensitivity.csv)にだけ入れる。
 # 出力(すべて集計値、N<10 抑制): 15_designs_items.csv / 15_tests_items.csv / 15_detection_counts.csv /
 #   15_diagnostics_summary.csv / 15_mass_diagnostic_summary.csv / 15_mass_diagnostic_flags.csv / 15_routing_sensitivity.csv /
 #   15_style_sensitivity.csv / 15_style_items_audit.csv / 15_core32.csv /
@@ -33,6 +37,7 @@ source(file.path(.here, "00_utils_disclosure.R"))
 source(file.path(.here, "15_mass_ratio.R"))          # mass-domination helper (tested by 15_test_mass_ratio.R)
 suppressMessages({library(haven); library(data.table); library(panelcond)})
 source(file.path(.here, "15_style_items.R"))         # response-style composites over the fixed item list
+source(file.path(.here, "15_item_scale.R"))          # the item specification table and its helpers (shared with 04)
 
 args <- commandArgs(trailingOnly = TRUE)
 getarg <- function(flag, default) { i <- match(flag, args); if (is.na(i) || i == length(args)) default else args[i + 1] }
@@ -44,7 +49,6 @@ T_WAVE   <- 5L
 RESP_W5 <- "DQ74M"; MAR_W5 <- "DQ43"  # 04 と同じリスク集合の定義
 VARMAP  <- path.expand(Sys.getenv("P1_VARMAP", file.path(PROJECT_DIR, "..", "..", "jlps_docs", "varmap_w1-19.csv")))
 OVERRIDES <- file.path(.here, "15_entry_overrides.csv")
-EXCLUDE   <- file.path(.here, "15_item_exclude.csv")     # 名義尺度など平均対比が無意味な項目(出力には残しフラグを付ける)
 CORE32  <- path.expand(Sys.getenv("P1_CORE32", file.path(PROJECT_DIR, "..", "J3_dose_response", "analysis", "j3_items.csv")))
 SESOI_D <- 0.10; SESOI_PP <- 0.02; Q_CUT <- 0.10
 DK_PAT <- "わからない|分からない|ＤＫ|DK"; REF_PAT <- "答えたくない|回答したくない"; NR_PAT <- "無回答|不明"; NAP_PAT <- "非該当"
@@ -68,6 +72,13 @@ main <- function() {
   cat(sprintf("input: %s (%s bytes; md5 %s; sha256 %s)\n", fp$file, fp$bytes, fp$md5, fp$sha256))
   if (is.null(a$src)) stop("analysis_w5.rds has no input record (built by an older 04); rerun 04_build_analysis.R first", call. = FALSE)
   if (is.null(a$style) || is.null(a$codes)) stop("analysis_w5.rds has no style-item record (built by a 04 older than 2026-09-24); rerun 04_build_analysis.R first", call. = FALSE)
+  if (is.null(a$spec) || is.null(a$src$item_scale)) stop("analysis_w5.rds has no item-specification record (built by a 04 older than 2026-09-28); rerun 04_build_analysis.R first", call. = FALSE)
+  sid_scale <- item_scale_id()
+  if (!identical(a$src$item_scale$md5, sid_scale$md5))
+    stop(sprintf("04 used the item specification table %s (md5 %s) but 15 finds %s (md5 %s); rerun 04 with the current table", a$src$item_scale$path, a$src$item_scale$md5, sid_scale$path, sid_scale$md5), call. = FALSE)
+  spec_tb <- as.data.table(a$spec); spec_row <- function(v) { i <- match(toupper(v), spec_tb$key); if (is.na(i)) NULL else spec_tb[i] }
+  parent_codes <- a$parent_codes; if (is.null(parent_codes)) parent_codes <- list()
+  subgroups <- read_entry_subgroups()
   style04 <- as.data.table(a$style); codes_of_var <- a$codes
   sid <- style_items_id()
   if (is.null(a$src$style_items) || !identical(a$src$style_items$md5, sid$md5))
@@ -132,7 +143,7 @@ main <- function() {
   }
   Xo <- mkX(io_rows); Xn <- mkX(in_rows); ADJ <- names(Xo)
 
-  ## ---- 3. 入所波(w1)の対応変数と結果行列 ----------------------------------------------
+  ## ---- 3. 入所波(w1)の対応変数と結果行列(v1.0: 04 と同じ項目指定を w1 側に当てる) ------------------------
   vm <- if (file.exists(VARMAP)) fread(VARMAP, encoding = "UTF-8") else { cat("diag: varmap not found:", VARMAP, "\n"); NULL }
   w1_of <- character(0)
   if (!is.null(vm) && all(c("w1", "w5") %in% names(vm))) {
@@ -140,54 +151,108 @@ main <- function() {
     vv <- vv[!duplicated(w5)]; w1_of <- setNames(vv$w1, vv$w5)
   }
   if (file.exists(OVERRIDES)) {
-    ov <- fread(OVERRIDES, encoding = "UTF-8"); ov <- ov[nzchar(w5_var)]
+    ov <- fread(OVERRIDES, encoding = "UTF-8", colClasses = "character", na.strings = NULL); ov <- ov[nzchar(w5_var)]
     for (i in seq_len(nrow(ov))) w1_of[toupper(ov$w5_var[i])] <- toupper(ov$w1_var[i])
     ov_recode <- setNames(ov$recode_w1, toupper(ov$w5_var))
   } else ov_recode <- character(0)
   cat("diag: w5→w1 対応表:", length(w1_of), "件(varmap+overrides)\n")
-  codes_of <- function(vl, pat) if (!is.null(vl)) unname(vl[grepl(pat, names(vl))]) else numeric(0)
-  spec_codes <- function(vl) c(codes_of(vl, DK_PAT), codes_of(vl, REF_PAT), codes_of(vl, NR_PAT), codes_of(vl, NAP_PAT))
+  pats <- list(dk = DK_PAT, ref = REF_PAT, nr = NR_PAT, nap = NAP_PAT)
+  ## the recode of 15_entry_overrides.csv (w1 -> w5 coding), applied to values and to the label set alike
+  ov_apply <- function(x, rc) {
+    if (is.na(rc) || !nzchar(rc)) return(x)
+    if (rc == "reverse12") return(ifelse(x == 1, 2, ifelse(x == 2, 1, x)))
+    if (grepl("^map:", rc)) return(apply_recode(x, sub("^map:", "", rc)))
+    stop("unknown recode_w1 in 15_entry_overrides.csv: ", rc, call. = FALSE)
+  }
+  ## 2007 subgroups (class C): logical vector over the continuing cohort, or NULL if the variable is not in the file
+  subgroup_mask <- function(name) {
+    i <- match(name, subgroups$subgroup)
+    if (is.na(i)) stop("ec_subgroup '", name, "' is not defined in 15_entry_subgroups.csv", call. = FALSE)
+    x <- num(subgroups$w1_var[i]); if (is.null(x)) return(NULL)
+    (x %in% parse_codes(subgroups$codes[i]))[io_rows]
+  }
   vars <- meta$var; J <- length(vars)
   E_A <- matrix(NA_real_, n_old, J, dimnames = list(NULL, vars))   # 入所波の実質値(継続、全員)
   E_M <- E_DK <- matrix(NA_real_, n_old, J, dimnames = list(NULL, vars))
-  ec_status <- data.table(var = vars, w1_var = NA_character_, ec_ok = FALSE, reason = "no w1 counterpart")
+  ec_status <- data.table(var = vars, w1_var = NA_character_, ec_ok = FALSE, reason = "no w1 counterpart", ec_class = meta$ec_class, ec_subgroup = meta$ec_subgroup, ec_main = meta$ec_main)
   dk_cnt <- dk_n <- miss_cnt <- miss_n <- rep(0, n_old)
-  for (j in seq_len(J)) {
-    v <- vars[j]; v1 <- w1_of[toupper(v)]
-    if (is.na(v1) || !nzchar(v1)) next
+  w1_derived <- list()                                             # derived items built from the w1 components, by name
+  ## one entry-wave column for a base item or a nominal question: returns list(subst, base, dk, nr) over the continuing cohort, or a reason
+  entry_of <- function(v_parent, sp, want_codes) {
+    v1 <- w1_of[toupper(v_parent)]
+    if (is.na(v1) || !nzchar(v1)) return(list(reason = "no w1 counterpart", w1_var = NA_character_))
     x1 <- getcol(v1, required = FALSE)
-    if (is.null(x1)) { ec_status[j, `:=`(w1_var = v1, reason = "w1 variable not in file")]; next }
-    x5 <- getcol(v, required = FALSE)
-    vl1 <- attr(x1, "labels", exact = TRUE); vl5 <- attr(x5, "labels", exact = TRUE)
+    if (is.null(x1)) return(list(reason = "w1 variable not in file", w1_var = v1))
+    vl1 <- attr(x1, "labels", exact = TRUE)
     xv1 <- suppressWarnings(as.numeric(zap_labels(x1)))[io_rows]
-    rc <- ov_recode[toupper(v)]
-    if (!is.na(rc) && nzchar(rc)) {
-      if (rc == "reverse12") xv1 <- ifelse(xv1 == 1, 2, ifelse(xv1 == 2, 1, xv1))
-      else if (grepl("^map:", rc)) { pairs <- strsplit(sub("^map:", "", rc), ";")[[1]]; from <- as.numeric(sub("=.*", "", pairs)); to <- as.numeric(sub(".*=", "", pairs)); xv1 <- ifelse(xv1 %in% from, to[match(xv1, from)], xv1) }
-    }
-    sp1 <- spec_codes(vl1); sp5 <- spec_codes(vl5)
-    if (exists("NAP_OVERRIDE") && !is.null(NAP_OVERRIDE[[toupper(v)]])) sp5 <- union(sp5, NAP_OVERRIDE[[toupper(v)]])   # 04 と同じ非該当上書き
-    vals1 <- if (!is.null(vl1)) sort(setdiff(unname(vl1), sp1)) else numeric(0); vals5 <- if (!is.null(vl5)) sort(setdiff(unname(vl5), sp5)) else numeric(0)
-    if (!is.na(rc) && nzchar(rc) && grepl("^map:", rc)) {                       # 対応表の再符号化をラベル集合にも適用してから比較
-      pairs <- strsplit(sub("^map:", "", rc), ";")[[1]]; from <- as.numeric(sub("=.*", "", pairs)); to <- as.numeric(sub(".*=", "", pairs))
-      vals1 <- sort(unique(ifelse(vals1 %in% from, to[match(vals1, from)], vals1)))
-    }
-    st <- meta$scale_type[j]
-    same <- (st == "continuous" && length(vals1) == 0) || (length(vals1) > 0 && length(vals1) == length(vals5) && all(vals1 == vals5))
-    if (!same && !(st == "continuous")) { ec_status[j, `:=`(w1_var = v1, reason = sprintf("coding mismatch (w1 %d vs w5 %d substantive labels)", length(vals1), length(vals5)))]; next }
-    dk1 <- codes_of(vl1, DK_PAT); nr1 <- codes_of(vl1, NR_PAT); nap1 <- codes_of(vl1, NAP_PAT); ref1 <- codes_of(vl1, REF_PAT)
-    base1 <- !is.na(xv1) & !(xv1 %in% nap1)
-    subst <- xv1; subst[xv1 %in% c(dk1, nr1, nap1, ref1)] <- NA
+    rc <- ov_recode[toupper(v_parent)]
+    xv1 <- ov_apply(xv1, rc)
+    sc1 <- special_codes_of(vl1, sp, pats)
+    ov <- NAP_OVERRIDE[[toupper(v_parent)]]; if (!is.null(ov)) sc1$nap <- union(sc1$nap, ov)
+    spec1 <- unlist(sc1)
+    vals1 <- if (!is.null(vl1)) setdiff(unname(vl1), spec1) else numeric(0)
+    vals1 <- ov_apply(vals1, rc); vals1 <- recode_codes(vals1, sp$recode)
+    base1 <- !is.na(xv1) & !(xv1 %in% sc1$nap)
+    subst <- xv1; subst[xv1 %in% spec1] <- NA; subst <- apply_recode(subst, sp$recode)
+    st <- sp$scale
+    same <- (st == "continuous" && length(vals1) == 0) || (length(vals1) > 0 && length(vals1) == length(want_codes) && all(vals1 == want_codes))
+    if (!same && st != "continuous")
+      return(list(reason = sprintf("coding mismatch (w1 %s vs w5 %s)", paste(vals1, collapse = ";"), paste(want_codes, collapse = ";")), w1_var = v1))
     if (st == "continuous") { qs <- quantile(subst, c(.01, .99), na.rm = TRUE); subst <- pmin(pmax(subst, qs[1]), qs[2]) }
-    E_A[, j] <- subst
-    E_M[base1, j] <- as.integer(xv1[base1] %in% nr1); E_DK[base1, j] <- as.integer(xv1[base1] %in% dk1)
-    dk_cnt[base1] <- dk_cnt[base1] + (xv1[base1] %in% dk1); dk_n[base1] <- dk_n[base1] + 1
-    miss_cnt[base1] <- miss_cnt[base1] + (xv1[base1] %in% nr1); miss_n[base1] <- miss_n[base1] + 1
-    ec_status[j, `:=`(w1_var = v1, ec_ok = TRUE, reason = "")]
+    list(subst = subst, base = base1, dk = xv1 %in% sc1$dk, nr = xv1 %in% sc1$nr, w1_var = v1)
   }
-  cat("diag: EC 可能項目:", sum(ec_status$ec_ok), "/", J, "\n")
+  entry_cache <- list()
+  for (j in seq_len(J)) {
+    v <- vars[j]; sp <- spec_row(if (nzchar(meta$qgroup[j])) meta$qgroup[j] else v)
+    if (is.null(sp)) sp <- spec_row(v)
+    if (is.null(sp)) { ec_status[j, reason := "not in 15_item_scale.csv"]; next }
+    cs <- parse_construct(sp$construct)
+    if (!is.null(cs) && cs$type %in% c("clock", "months")) {
+      ## derived item: the w1 components are listed as a comma-separated w1_var in 15_entry_overrides.csv
+      v1 <- w1_of[toupper(v)]
+      if (is.na(v1) || !nzchar(v1)) { ec_status[j, reason := "no w1 components (15_entry_overrides.csv)"]; next }
+      comp <- trimws(strsplit(v1, ",")[[1]]); vals <- lapply(comp, function(cv) { x <- num(cv); if (is.null(x)) NULL else x[io_rows] })
+      if (any(vapply(vals, is.null, TRUE))) { ec_status[j, `:=`(w1_var = v1, reason = "w1 component not in file")]; next }
+      if (cs$type == "clock") {
+        leave <- if (!is.null(cs$leave)) w1_derived[[cs$leave]] else NULL
+        if (!is.null(cs$leave) && is.null(leave)) { ec_status[j, `:=`(w1_var = v1, reason = paste("w1 leave-home time", cs$leave, "not built"))]; next }
+        subst <- build_clock(vals[[1]], vals[[2]], vals[[3]], cs$kind, leave)
+      } else subst <- build_months(vals[[1]], vals[[2]])
+      w1_derived[[v]] <- subst
+      qs <- quantile(subst, c(.01, .99), na.rm = TRUE); subst <- pmin(pmax(subst, qs[1]), qs[2])
+      ent <- list(subst = subst, base = !is.na(subst), dk = rep(FALSE, n_old), nr = rep(FALSE, n_old), w1_var = v1)
+    } else if (nzchar(meta$qgroup[j])) {
+      ## indicator of a nominal question: the parent's w1 variable, the same code
+      parent <- meta$qgroup[j]
+      if (is.null(entry_cache[[parent]])) entry_cache[[parent]] <- entry_of(parent, sp, parent_codes[[parent]])
+      ent <- entry_cache[[parent]]
+      if (!is.null(ent$reason)) { ec_status[j, `:=`(w1_var = ent$w1_var, reason = ent$reason)]; next }
+      code <- as.numeric(sub("^.*__", "", v))
+      first <- v == vars[which(meta$qgroup == parent)[1]]
+      ind <- ifelse(is.na(ent$subst), NA_real_, as.numeric(ent$subst == code))
+      ent <- list(subst = ind, base = if (first) ent$base else rep(FALSE, n_old), dk = ent$dk, nr = ent$nr, w1_var = ent$w1_var)
+    } else {
+      ent <- entry_of(v, sp, if (is.null(codes_of_var[[v]])) numeric(0) else codes_of_var[[v]])
+      if (!is.null(ent$reason)) { ec_status[j, `:=`(w1_var = ent$w1_var, reason = ent$reason)]; next }
+    }
+    ## class C: the entry-wave term is computed within the 2007 subgroup (members outside it are set to missing)
+    if (nzchar(meta$ec_subgroup[j])) {
+      mk <- subgroup_mask(meta$ec_subgroup[j])
+      if (is.null(mk)) { ec_status[j, `:=`(w1_var = ent$w1_var, reason = paste("subgroup variable not in file:", meta$ec_subgroup[j]))]; next }
+      ent$subst[!mk] <- NA; ent$base <- ent$base & mk
+    }
+    E_A[, j] <- ent$subst
+    E_M[ent$base, j] <- as.integer(ent$nr[ent$base]); E_DK[ent$base, j] <- as.integer(ent$dk[ent$base])
+    if (!nzchar(meta$qgroup[j]) || any(ent$base)) {           # the question-level counts once per nominal question
+      dk_cnt[ent$base] <- dk_cnt[ent$base] + ent$dk[ent$base]; dk_n[ent$base] <- dk_n[ent$base] + 1
+      miss_cnt[ent$base] <- miss_cnt[ent$base] + ent$nr[ent$base]; miss_n[ent$base] <- miss_n[ent$base] + 1
+    }
+    ec_status[j, `:=`(w1_var = ent$w1_var, ec_ok = TRUE, reason = "")]
+  }
+  cat("diag: EC 可能項目:", sum(ec_status$ec_ok), "/", J, "; うち主分析(区分 A/B/C):", sum(ec_status$ec_ok & ec_status$ec_main), "\n")
   print(ec_status[ec_ok == FALSE, .N, by = reason])
-  write_aggregate(ec_status[ec_ok == FALSE, .(var, label = meta$label[match(var, meta$var)], w1_var, reason)], "15_ec_unavailable.csv")
+  write_aggregate(ec_status[ec_ok == FALSE, .(var, label = meta$label[match(var, meta$var)], w1_var, ec_class, reason)], "15_ec_unavailable.csv")
+  write_aggregate(ec_status[, .(var, label = meta$label[match(var, meta$var)], w1_var, ec_ok, ec_class, ec_subgroup, ec_main)], "15_ec_status.csv")
 
   ## ---- 4. 解析行列(継続 = 全入所者、追加 = 全員; 列 = 族×項目) -----------------------------
   fill_old <- function(Mat) { out <- matrix(NA_real_, n_old, ncol(Mat), dimnames = list(NULL, colnames(Mat))); ok <- !is.na(pos_old); out[ok, ] <- Mat[pos_old[ok], , drop = FALSE]; out }
@@ -422,15 +487,21 @@ main <- function() {
     pc[, binary := binary_col[match(col, cols)]]
     pc[, sesoi := fifelse(binary | family == "P_style", SESOI_PP, SESOI_D * sd_pool)]
     pc[, p_tost := pmax(pnorm(-(estimate + sesoi) / se), pnorm((estimate - sesoi) / se))]
-    ## items listed in 15_item_exclude.csv (nominal or paradata codes: a mean contrast is not meaningful) stay in the
-    ## item files with exclude_flag, but are outside every multiplicity family and every count (since 2026-09-23;
-    ## before, they were excluded from the counts but still entered the BH adjustment of the other items)
-    if (file.exists(EXCLUDE)) { ex <- fread(EXCLUDE, encoding = "UTF-8"); pc[, exclude_flag := toupper(var) %in% toupper(ex$var)] } else pc[, exclude_flag := FALSE]
+    ## items with in_counts = FALSE in 15_item_scale.csv (v1.0; before: those listed in 15_item_exclude.csv — nominal or
+    ## paradata codes, for which a mean contrast is not meaningful) stay in the item files with exclude_flag, but are
+    ## outside every multiplicity family and every count (since 2026-09-23; before, they were excluded from the counts
+    ## but still entered the BH adjustment of the other items)
+    ## v1.0: the items outside the counts are those with in_counts = FALSE in 15_item_scale.csv (04's meta); the former
+    ## 15_item_exclude.csv is no longer read
+    pc[, exclude_flag := !(meta$in_counts[match(var, meta$var)] %in% TRUE) & family != "P_style" & family != "P_style_sens"]
+    pc[, ec_main := meta$ec_main[match(var, meta$var)] %in% TRUE | family %in% c("P_style", "P_style_sens")]
+    pc[, ec_class := meta$ec_class[match(var, meta$var)]]
     ## 04 のメタにある衛生フラグ(調査票の版差・ルーティング疑い)を項目に付ける(B 族の解釈に必須)
     if ("filter_mismatch" %in% names(meta)) pc[, filter_mismatch := meta$filter_mismatch[match(var, meta$var)]]
     if ("nr_routing_flag" %in% names(meta)) pc[, nr_routing_flag := meta$nr_routing_flag[match(var, meta$var)]] else pc[, nr_routing_flag := NA]
-    ## items outside the counts (since 2026-09-24): those listed in 15_item_exclude.csv (nominal codes, date and
-    ## clock-time components, duplicate recodes) and those flagged as potentially incomparable between the arms
+    ## items outside the counts (since 2026-09-24): those with in_counts = FALSE in 15_item_scale.csv (before v1.0: the
+    ## list 15_item_exclude.csv of nominal codes, date and clock-time components and duplicate recodes) and those
+    ## flagged as potentially incomparable between the arms
     ## because of differential item nonresponse or routing (04's nr_routing_flag: the item-nonresponse rate differs
     ## between continuing respondents and entrants by more than the threshold; the questionnaire filters behind the
     ## difference have not been verified, so the flag is a screening rule, not a documented routing difference).
@@ -444,13 +515,17 @@ main <- function() {
       rf <- unique(toupper(pc[nr_routing_flag %in% TRUE, var]))
       fu <- function(v) { if (!length(rf)) return(FALSE); v <- toupper(v); any(startsWith(v, rf) & grepl("^[A-Z_][A-Z0-9_]*$", substring(v, nchar(rf) + 1L)) & nchar(v) > nchar(rf)) }
       pc[, routing_followup := !(nr_routing_flag %in% TRUE) & vapply(var, fu, logical(1))]
-      pc[, count_exclude := exclude_flag | (nr_routing_flag %in% TRUE) | routing_followup]
+      ## item-level exclusion (the same for every estimator) and the row-level one, which also keeps the entry-wave
+      ## estimators of items outside the main entry-wave analysis (class D, or no class) out of the counts (v1.0)
+      pc[, count_exclude0 := exclude_flag | (nr_routing_flag %in% TRUE) | routing_followup]
+      pc[, count_exclude := count_exclude0 | (estimator %in% c("ec", "ec_adj") & !ec_main)]
       pc[, `:=`(q = NA_real_, q_tost = NA_real_)]
       pc[count_exclude == FALSE, q := p.adjust(p, "BH"), by = .(family, estimator)]
       pc[count_exclude == FALSE, q_tost := p.adjust(p_tost, "BH"), by = .(family, estimator)]
       pc[, class3 := fifelse(is.na(se) | se <= 0, "n/a (no variation)", fifelse(q < Q_CUT, "affected", fifelse(q_tost < Q_CUT, "equivalent", "undetermined")))]
-      pc[exclude_flag == TRUE & !(is.na(se) | se <= 0), class3 := "excluded (listed code)"]
-      pc[exclude_flag == FALSE & count_exclude == TRUE & !(is.na(se) | se <= 0), class3 := "excluded (routing flag)"]
+      pc[exclude_flag == TRUE & !(is.na(se) | se <= 0), class3 := "excluded (outside the counts)"]
+      pc[exclude_flag == FALSE & count_exclude0 == TRUE & !(is.na(se) | se <= 0), class3 := "excluded (routing flag)"]
+      pc[count_exclude0 == FALSE & count_exclude == TRUE & !(is.na(se) | se <= 0), class3 := "excluded (entry-wave class D)"]
       pc
     }
     pc <- classify(pc, pc$nr_routing_flag)
@@ -490,14 +565,14 @@ main <- function() {
     }))
     sens_all[[dose_def]] <- sens
     ## 診断表(項目ごと; ブートストラップ SE 版の T1/T2)
-    te <- unique(pc[, .(dose_def, col, family, var, label, T1_stat, T1_p, T2_stat, T2_p, delta_entry, n_pairs, p_survive, funnel_ratio, funnel_ratio_supported, funnel_p, funnel_zero_denom, funnel_sparse_gt1, funnel_ncat, funnel_missing_mass, funnel_needed_mass, funnel_identity_feasible, reach_new, reach_old_S, answer_new_given_reach, answer_old_S_given_reach, exclude_flag, count_exclude, nr_routing_flag)])
+    te <- unique(pc[, .(dose_def, col, family, var, label, T1_stat, T1_p, T2_stat, T2_p, delta_entry, n_pairs, p_survive, funnel_ratio, funnel_ratio_supported, funnel_p, funnel_zero_denom, funnel_sparse_gt1, funnel_ncat, funnel_missing_mass, funnel_needed_mass, funnel_identity_feasible, reach_new, reach_old_S, answer_new_given_reach, answer_old_S_given_reach, exclude_flag, count_exclude = count_exclude0, nr_routing_flag, ec_main, ec_class)])
     te[, `:=`(d1 = full$d1[match(col, cols)], d2 = full$d2[match(col, cols)],
               d1_se_boot = se_boot[cbind(match(col, cols), match("d1", keys))], d2_se_boot = se_boot[cbind(match(col, cols), match("d2", keys))],
               delta_se_boot = se_boot[cbind(match(col, cols), match("delta", keys))])]
     te[, `:=`(T1_p_boot = 2 * pnorm(-abs(d1 / d1_se_boot)), T2_p_boot = 2 * pnorm(-abs(d2 / d2_se_boot)))]
     tests_all[[dose_def]] <- te
     arms_all[[dose_def]] <- data.table(dose_def = dose_def, n_old_total = n_old, n_old_S = sum(S), n_old_S_next = sum(S == 1L & S_next %in% 1L),
-                                       n_new_total = n_new, n_new_sm = sum(Sm), n_new_sm1 = sum(Sm1), n_ec_items = sum(ec_status$ec_ok), B = B_BOOT, seed = SEED15)
+                                       n_new_total = n_new, n_new_sm = sum(Sm), n_new_sm1 = sum(Sm1), n_ec_items = sum(ec_status$ec_ok), n_ec_items_main = sum(ec_status$ec_ok & ec_status$ec_main), B = B_BOOT, seed = SEED15)
   }
   res <- rbindlist(res_all); tests <- rbindlist(tests_all); arms <- rbindlist(arms_all)
 
@@ -506,7 +581,7 @@ main <- function() {
                        d_std = round(d_std, 4), p = signif(p, 4), q = signif(q, 4), p_tost = signif(p_tost, 4), q_tost = signif(q_tost, 4), class3,
                        n_old, n_new, n_pairs, funnel_ratio = round(funnel_ratio, 3), funnel_ratio_supported = round(funnel_ratio_supported, 3),
                        funnel_zero_denom, funnel_sparse_gt1, funnel_ncat,
-                       exclude_flag, count_exclude,
+                       exclude_flag, count_exclude, ec_class, ec_main,
                        filter_mismatch = if ("filter_mismatch" %in% names(res)) filter_mismatch else NA,
                        nr_routing_flag = if ("nr_routing_flag" %in% names(res)) nr_routing_flag else NA,
                        routing_followup)]
@@ -517,7 +592,7 @@ main <- function() {
                             funnel_zero_denom, funnel_sparse_gt1, funnel_ncat, funnel_missing_mass = round(funnel_missing_mass, 4), funnel_needed_mass = round(funnel_needed_mass, 4),
                             funnel_identity_feasible, reach_new = round(reach_new, 4), reach_old_S = round(reach_old_S, 4),
                             answer_new_given_reach = round(answer_new_given_reach, 4), answer_old_S_given_reach = round(answer_old_S_given_reach, 4),
-                            exclude_flag, count_exclude, nr_routing_flag)], "15_tests_items.csv")
+                            exclude_flag, count_exclude, nr_routing_flag, ec_class, ec_main)], "15_tests_items.csv")
   write_aggregate(rbindlist(sens_all), "15_routing_sensitivity.csv", exempt = grep("^(n_|aff_|common_)", names(rbindlist(sens_all)), value = TRUE))
   ## response-style composites under alternative item sets (item counts are numbers of items, not persons)
   sty <- rbindlist(style_sens_all)
@@ -529,8 +604,19 @@ main <- function() {
                  n_undetermined = sum(class3 == "undetermined", na.rm = TRUE),
                  median_abs_d = round(median(abs(d_std), na.rm = TRUE), 4), share_positive = round(mean(estimate > 0, na.rm = TRUE), 3)), by = .(dose_def, family, estimator)]
   write_aggregate(det, "15_detection_counts.csv", exempt = c("n_items", "n_affected", "n_equivalent", "n_undetermined"))
+  ## entry-wave scope (v1.0): the main analysis counts classes A, B and C; the sensitivity adds class D and unclassified
+  ## items with an entry wave. Counts by class and for the two scopes, substantive items only.
+  ecs <- res[family == "A_substantive" & estimator %in% c("ec", "ec_adj") & class3 != "n/a (no variation)" & count_exclude0 == FALSE]
+  ecs[, cls := fifelse(is.na(ec_class) | !nzchar(ec_class), "(none)", ec_class)]
+  ecs[, q_all := p.adjust(p, "BH"), by = .(dose_def, estimator)]
+  scope <- rbind(ecs[ec_main == TRUE, .(scope = "main (A+B+C)", n_items = .N, n_affected = sum(class3 == "affected", na.rm = TRUE)), by = .(dose_def, estimator)],
+                 ecs[, .(scope = "all entry-wave items", n_items = .N, n_affected = sum(q_all < Q_CUT, na.rm = TRUE)), by = .(dose_def, estimator)])
+  write_aggregate(scope[order(dose_def, estimator, scope)], "15_ec_scope_sensitivity.csv", exempt = c("n_items", "n_affected"))
+  write_aggregate(ecs[, .(n_items = .N, n_affected_main_q = sum(ec_main & class3 == "affected", na.rm = TRUE), n_affected_all_q = sum(q_all < Q_CUT, na.rm = TRUE)), by = .(dose_def, estimator, cls)][order(dose_def, estimator, cls)],
+                  "15_ec_counts_by_class.csv", exempt = c("n_items", "n_affected_main_q", "n_affected_all_q"))
   ## the diagnostics are contrasts of means: the same items as in the detection counts; n_T1/n_T2 are the numbers
   ## of items on which each statistic exists (T1 = SM - EC needs the entry-wave arm)
+  tests[ec_main == FALSE, `:=`(T1_p_boot = NA_real_, d1 = NA_real_)]      # T1 = SM - EC is a main-analysis diagnostic only for class A/B/C items
   diag <- tests[count_exclude == FALSE, .(n_items = .N, n_T1_tests = sum(!is.na(T1_p_boot)), n_T2_tests = sum(!is.na(T2_p_boot)),
                     n_T1_reject = sum(T1_p_boot < .05, na.rm = TRUE), n_T2_reject = sum(T2_p_boot < .05, na.rm = TRUE), share_T1_p05 = round(mean(T1_p_boot < .05, na.rm = TRUE), 3), share_T2_p05 = round(mean(T2_p_boot < .05, na.rm = TRUE), 3),
                     share_T1_positive = round(mean(d1 > 0, na.rm = TRUE), 3), share_T2_positive = round(mean(d2 > 0, na.rm = TRUE), 3),
@@ -568,7 +654,7 @@ main <- function() {
                        nr_routing_flag)][
                        order(dose_def, -funnel_zero_denom, -funnel_ratio)],
                   "15_mass_diagnostic_flags.csv")
-  write_aggregate(arms, "15_arms.csv", exempt = c("B", "seed", "n_ec_items"))
+  write_aggregate(arms, "15_arms.csv", exempt = c("B", "seed", "n_ec_items", "n_ec_items_main"))
   write_aggregate(rbindlist(val_all), "15_validation.csv", exempt = c("n_compared", "n_na_mismatch"))
   ## 中核 32 項目(J3 の j3_items.csv の w5_cont を var に対応)
   if (file.exists(CORE32)) {
@@ -585,7 +671,8 @@ main <- function() {
   writeLines(c(paste("time:", format(Sys.time())), paste("input:", basename(f)), paste("input size:", file.size(f)), paste("input mtime:", format(file.mtime(f))),
                paste("input md5:", fp$md5), paste("input sha256:", fp$sha256),
                paste("derived:", file.path(DERIVED_DIR, "analysis_w5.rds"), format(file.mtime(file.path(DERIVED_DIR, "analysis_w5.rds")))),
-               paste("varmap:", VARMAP), paste("style items:", basename(sid$path), "md5:", sid$md5), paste("B:", B_BOOT, "seed:", SEED15, "dose:", paste(DOSE_DEFS, collapse = ",")),
+               paste("varmap:", VARMAP), paste("style items:", basename(sid$path), "md5:", sid$md5),
+               paste("item scale:", basename(sid_scale$path), "md5:", sid_scale$md5), paste("B:", B_BOOT, "seed:", SEED15, "dose:", paste(DOSE_DEFS, collapse = ",")),
                paste("panelcond:", as.character(packageVersion("panelcond"))), "", si), file.path(RESULTS_DIR, "15_env.txt"))
   cat("\n== 15 完了 (", round(as.numeric(difftime(Sys.time(), t0, units = "mins")), 1), "min ). 共有してほしいもの ==\n")
   cat("コンソール出力全文 + results/15_*.csv + 15_env.txt(すべて集計値)\n")

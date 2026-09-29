@@ -8,7 +8,9 @@ kit/R/04_build_analysis.R
 kit/R/11_negcontrol_w13.R
 kit/R/11b_negcontrol_w13_boot.R
 kit/R/15_entry_overrides.csv
-kit/R/15_item_exclude.csv
+kit/R/15_entry_subgroups.csv
+kit/R/15_item_scale.csv
+kit/R/15_item_scale.R
 kit/R/15_make_synthetic_varmap.R
 kit/R/15_make_synthetic.R
 kit/R/15_mass_ratio.R
@@ -20,11 +22,16 @@ kit/R/15_test_style_items.R
 kit/R/15b_item_flags.R
 kit/synthetic_out/04_balance.csv
 kit/synthetic_out/04_item_meta.csv
+kit/synthetic_out/04_item_scale_resolved.csv
+kit/synthetic_out/04_items_unlisted.csv
 kit/synthetic_out/04_summary.csv
 kit/synthetic_out/15_arms.csv
 kit/synthetic_out/15_designs_items.csv
 kit/synthetic_out/15_detection_counts.csv
 kit/synthetic_out/15_diagnostics_summary.csv
+kit/synthetic_out/15_ec_counts_by_class.csv
+kit/synthetic_out/15_ec_scope_sensitivity.csv
+kit/synthetic_out/15_ec_status.csv
 kit/synthetic_out/15_ec_unavailable.csv
 kit/synthetic_out/15_env.txt
 kit/synthetic_out/15_item_flags.csv

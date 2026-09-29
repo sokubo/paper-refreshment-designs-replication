@@ -1,12 +1,13 @@
-time: 2026-09-24 12:26:20
+time: 2026-09-28 20:49:03
 input: SYNTH_ZQ100AQ100BQ100CQ100DQ100EQ100FQ100GQ100HQ100IQ100.dta
-input size: 6500876
-input mtime: 2026-09-24 05:12:21
-input md5: 4462c278ca2ed297ff47b2c23e31e80d
-input sha256: 760b722ad0728a80773003ff3b0cda6debf6bf1b497d3a1a78600cc493f75289
-derived: /tmp/p1synth/derived_me/analysis_w5.rds 2026-09-24 12:25:40
+input size: 8991394
+input mtime: 2026-09-28 20:48:02
+input md5: f4469908e092f38fd820fe87bdedf5a9
+input sha256: 9f6d67e3e63fa4e1ae85dc681a265410badcde6cecf488ec3349be0c27d2d445
+derived: /tmp/p1synth/derived_me/analysis_w5.rds 2026-09-28 20:48:13
 varmap: /tmp/p1synth/varmap_synthetic.csv
 style items: style_items_synthetic.csv md5: 24c653a7d506659786b3a51d1c182fbe
+item scale: item_scale_synthetic.csv md5: c7d98a4835c119db82cc7536c6bd8951
 B: 50 seed: 20260915 dose: exact,any
 panelcond: 0.1.4
 

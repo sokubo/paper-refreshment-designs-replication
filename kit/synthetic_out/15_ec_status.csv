@@ -1,0 +1,90 @@
+"var","label","w1_var","ec_ok","ec_class","ec_subgroup","ec_main"
+"DQ101","w5問1_意識項目1","ZQ101",TRUE,"A","",TRUE
+"DQ102","w5問2_意識項目2","ZQ102",TRUE,"A","",TRUE
+"DQ103","w5問3_意識項目3","ZQ103",TRUE,"D","",FALSE
+"DQ104","w5問4_意識項目4","ZQ104",TRUE,"A","",TRUE
+"DQ105","w5問5_意識項目5","ZQ105",TRUE,"A","",TRUE
+"DQ106","w5問6_意識項目6","ZQ106",TRUE,"A","",TRUE
+"DQ107","w5問7_意識項目7","ZQ107",TRUE,"A","",TRUE
+"DQ108","w5問8_意識項目8","ZQ108",TRUE,"A","",TRUE
+"DQ109","w5問9_意識項目9","ZQ109",TRUE,"A","",TRUE
+"DQ110","w5問10_意識項目10","ZQ110",TRUE,"A","",TRUE
+"DQ111","w5問11_意識項目11","ZQ111",TRUE,"A","",TRUE
+"DQ112","w5問12_意識項目12","ZQ112",TRUE,"A","",TRUE
+"DQ113","w5問13_意識項目13","ZQ113",TRUE,"A","",TRUE
+"DQ114","w5問14_意識項目14","ZQ114",TRUE,"A","",TRUE
+"DQ115","w5問15_意識項目15","ZQ115",TRUE,"A","",TRUE
+"DQ116","w5問16_意識項目16","ZQ116",TRUE,"A","",TRUE
+"DQ117","w5問17_意識項目17","ZQ117",TRUE,"A","",TRUE
+"DQ118","w5問18_意識項目18","ZQ118",TRUE,"A","",TRUE
+"DQ119","w5問19_意識項目19","ZQ119",TRUE,"A","",TRUE
+"DQ120","w5問20_意識項目20","ZQ120",TRUE,"A","",TRUE
+"DQ121","w5問21_意識項目21","ZQ121",TRUE,"A","",TRUE
+"DQ122","w5問22_意識項目22","ZQ122",TRUE,"A","",TRUE
+"DQ123","w5問23_意識項目23","ZQ123",TRUE,"A","",TRUE
+"DQ124","w5問24_意識項目24","ZQ124",TRUE,"A","",TRUE
+"DQ125","w5問25_意識項目25","ZQ125",TRUE,"A","",TRUE
+"DQ126","w5問26_意識項目26","ZQ126",FALSE,"A","",TRUE
+"DQ127","w5問27_意識項目27",NA,FALSE,"","",TRUE
+"DQ128","w5問28_意識項目28",NA,FALSE,"","",TRUE
+"DQ129","w5問29_意識項目29",NA,FALSE,"","",TRUE
+"DQ130","w5問30_意識項目30",NA,FALSE,"","",TRUE
+"DQ131","w5問31_事実項目31","ZQ131",TRUE,"A","",TRUE
+"DQ132","w5問32_事実項目32","ZQ132",TRUE,"A","",TRUE
+"DQ133","w5問33_事実項目33","ZQ133",TRUE,"A","",TRUE
+"DQ134","w5問34_事実項目34","ZQ134",TRUE,"A","",TRUE
+"DQ135","w5問35_事実項目35","ZQ135",TRUE,"A","",TRUE
+"DQ136","w5問36_労働時間36","ZQ136",TRUE,"A","",TRUE
+"DQ137","w5問37_労働時間37","ZQ137",TRUE,"A","",TRUE
+"DQ138","w5問38_労働時間38","ZQ138",TRUE,"A","",TRUE
+"DQ139","w5問39_労働時間39","ZQ139",TRUE,"A","",TRUE
+"DQ140","w5問40_労働時間40","ZQ140",TRUE,"A","",TRUE
+"DQ02","w5_就業",NA,FALSE,"A","",TRUE
+"DQ43__1","w5問43_婚姻: 既婚","ZQ50",TRUE,"A","",TRUE
+"DQ43__2","w5問43_婚姻: 未婚","ZQ50",TRUE,"A","",TRUE
+"DQ15","w5問15_喫煙","ZQ15",TRUE,"A","",TRUE
+"DQ30__1","w5問30_支持政党: 自民党","ZQ30",TRUE,"A","",TRUE
+"DQ30__2","w5問30_支持政党: 民主党","ZQ30",TRUE,"A","",TRUE
+"DQ30__3","w5問30_支持政党: 公明党","ZQ30",TRUE,"A","",TRUE
+"DQ30__4","w5問30_支持政党: 共産党","ZQ30",TRUE,"A","",TRUE
+"DQ30__5","w5問30_支持政党: 社民党","ZQ30",TRUE,"A","",TRUE
+"DQ30__6","w5問30_支持政党: 国民新党","ZQ30",TRUE,"A","",TRUE
+"DQ30__8","w5問30_支持政党: その他の政党","ZQ30",TRUE,"A","",TRUE
+"DQ30__9","w5問30_支持政党: 特に支持する政党はない","ZQ30",TRUE,"A","",TRUE
+"DQ03_1__1","w5問3(1)_現職・働き方: 経営者、役員","JC_1",TRUE,"C","employed2007",TRUE
+"DQ03_1__2","w5問3(1)_現職・働き方: 正社員・正職員","JC_1",TRUE,"C","employed2007",TRUE
+"DQ03_1__3","w5問3(1)_現職・働き方: パート・アルバイト・契約・臨時・嘱託","JC_1",TRUE,"C","employed2007",TRUE
+"DQ03_1__4","w5問3(1)_現職・働き方: 派遣社員","JC_1",TRUE,"C","employed2007",TRUE
+"DQ03_1__5","w5問3(1)_現職・働き方: 請負社員","JC_1",TRUE,"C","employed2007",TRUE
+"DQ03_1__6","w5問3(1)_現職・働き方: 自営業主、自由業者","JC_1",TRUE,"C","employed2007",TRUE
+"DQ03_1__7","w5問3(1)_現職・働き方: 家族従業者","JC_1",TRUE,"C","employed2007",TRUE
+"DQ03_1__8","w5問3(1)_現職・働き方: 内職","JC_1",TRUE,"C","employed2007",TRUE
+"DQ03_1__9","w5問3(1)_現職・働き方: その他","JC_1",TRUE,"C","employed2007",TRUE
+"DQ03_2__1","w5問3(2)_現職・職業―大分類(プリコード): 専門職・技術職","JC_2",TRUE,"C","employed2007",TRUE
+"DQ03_2__2","w5問3(2)_現職・職業―大分類(プリコード): 管理職","JC_2",TRUE,"C","employed2007",TRUE
+"DQ03_2__3","w5問3(2)_現職・職業―大分類(プリコード): 事務職","JC_2",TRUE,"C","employed2007",TRUE
+"DQ03_2__4","w5問3(2)_現職・職業―大分類(プリコード): 販売職","JC_2",TRUE,"C","employed2007",TRUE
+"DQ03_2__5","w5問3(2)_現職・職業―大分類(プリコード): サービス職","JC_2",TRUE,"C","employed2007",TRUE
+"DQ03_2__6","w5問3(2)_現職・職業―大分類(プリコード): 生産現場職・技能職","JC_2",TRUE,"C","employed2007",TRUE
+"DQ03_2__7","w5問3(2)_現職・職業―大分類(プリコード): 運輸・保安職","JC_2",TRUE,"C","employed2007",TRUE
+"DQ03_2__8","w5問3(2)_現職・職業―大分類(プリコード): その他","JC_2",TRUE,"C","employed2007",TRUE
+"DQ42_A","w5問42_健康保険―A",NA,FALSE,"","",FALSE
+"DQ42_B","w5問42_健康保険―B",NA,FALSE,"","",FALSE
+"DQ57A","w5問57A_起床_時刻の回答形式","ZQ02A",TRUE,"B","",TRUE
+"DQ57B__1","w5問57B_家を出る_時刻の回答形式: だいたい午前／午後×時○分ころ","ZQ02B",TRUE,"B","",TRUE
+"DQ57B__2","w5問57B_家を出る_時刻の回答形式: 特に決まっていない","ZQ02B",TRUE,"B","",TRUE
+"DQ57B__3","w5問57B_家を出る_時刻の回答形式: 主に家にいる","ZQ02B",TRUE,"B","",TRUE
+"DQ57C__1","w5問57C_帰宅_時刻の回答形式: だいたい午前／午後×時○分ころ","ZQ02C",TRUE,"B","",TRUE
+"DQ57C__2","w5問57C_帰宅_時刻の回答形式: 特に決まっていない","ZQ02C",TRUE,"B","",TRUE
+"DQ57C__3","w5問57C_帰宅_時刻の回答形式: 主に家にいる","ZQ02C",TRUE,"B","",TRUE
+"DQ57D","w5問57D_就寝_時刻の回答形式","ZQ02D",TRUE,"B","",TRUE
+"DQ03_5E","w5問3(5)-5_収入の形態―年俸",NA,FALSE,"","",FALSE
+"DQ03_5ES","w5問3(5)-5_収入の金額―年俸",NA,FALSE,"","",FALSE
+"DQ03_13","w5問3(13)_現在の会社で当面仕事を続けるか","ZQ05_5Y",TRUE,"C","employed2007",TRUE
+"DQ17A","w5問17A_中3時の父親の喫煙",NA,FALSE,"","",FALSE
+"dq57a_hr","起床時刻(時; 分を含む)","ZQ02AX,ZQ02AY,ZQ02AZ",TRUE,"B","",TRUE
+"dq57b_hr","家を出る時刻(時)","ZQ02BX,ZQ02BY,ZQ02BZ",TRUE,"B","",TRUE
+"dq57c_hr","帰宅時刻(時; 家を出る時刻より前なら +24)","ZQ02CX,ZQ02CY,ZQ02CZ",TRUE,"B","",TRUE
+"dq57d_hr","就寝時刻(時; 0-11 時は +24, 午後12時は 24)","ZQ02DX,ZQ02DY,ZQ02DZ",TRUE,"B","",TRUE
+"dq57d_hr_s12","就寝時刻(感度: 午後12時を欠損に)","ZQ02DX,ZQ02DY,ZQ02DZ",TRUE,"B","",TRUE
+"dq54_1_months","交際期間(月数 = 年×12 + 月)","ZQ59_1Y,ZQ59_1M",TRUE,"C","partner2007",TRUE

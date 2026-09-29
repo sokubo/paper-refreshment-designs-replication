@@ -31,3 +31,4 @@
 "DQ999",NA,"rating","agree5",5,TRUE,FALSE,FALSE,FALSE,"","",NA,FALSE,FALSE,FALSE,FALSE,FALSE,"not in the item universe","synthetic item absent from the file: must be reported as not in the item universe"
 "DQ129","w5問29_意識項目29","","",5,NA,TRUE,NA,NA,"1 2 3 4 5","そう思う | どちらかといえばそう思う | どちらともいえない | どちらかといえばそう思わない | そう思わない",NA,FALSE,FALSE,FALSE,FALSE,TRUE,"not on the list: entered the composites under the v0.7 rule only",""
 "DQ130","w5問30_意識項目30","","",5,NA,TRUE,NA,NA,"1 2 3 4 5","そう思う | どちらかといえばそう思う | どちらともいえない | どちらかといえばそう思わない | そう思わない",NA,FALSE,FALSE,FALSE,FALSE,TRUE,"not on the list: entered the composites under the v0.7 rule only",""
+"DQ15","w5問15_喫煙","","",4,NA,TRUE,NA,NA,"1 2 3 4","喫煙したことがない | 1～10本 | 11～20本 | 21本以上","ZQ15",TRUE,FALSE,FALSE,FALSE,TRUE,"not on the list: entered the composites under the v0.7 rule only",""

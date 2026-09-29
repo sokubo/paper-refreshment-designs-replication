@@ -1,0 +1,17 @@
+"dose_def","estimator","cls","n_items","n_affected_main_q","n_affected_all_q"
+"any","ec","A",45,4,4
+"any","ec","B",12,0,0
+"any","ec","C",19,0,0
+"any","ec","D",1,0,1
+"any","ec_adj","A",45,4,4
+"any","ec_adj","B",12,0,0
+"any","ec_adj","C",19,0,0
+"any","ec_adj","D",1,0,1
+"exact","ec","A",45,4,4
+"exact","ec","B",12,0,0
+"exact","ec","C",19,0,0
+"exact","ec","D",1,0,1
+"exact","ec_adj","A",45,4,4
+"exact","ec_adj","B",12,0,0
+"exact","ec_adj","C",19,0,0
+"exact","ec_adj","D",1,0,1

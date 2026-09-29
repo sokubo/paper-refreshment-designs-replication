@@ -89,6 +89,94 @@ d$DQ74M <- ifelse(R[, 5] == 1, sample(1:3, n, TRUE), NA_real_)
 d$DQ43  <- labelled(ifelse(R[, 5] == 1, sample(1:2, n, TRUE), NA_real_), c("既婚" = 1, "未婚" = 2), label = "w5問43_婚姻")
 d$ZQ50  <- labelled(ifelse(cn == 1, sample(1:2, n, TRUE), NA_real_), c("未婚" = 1, "既婚" = 2), label = "問50_婚姻")   # w1 は逆転コーディング
 d$ZQ23A <- ifelse(cn == 1, educ, NA_real_); d$DQ69A <- ifelse(cn == 2, educ, NA_real_)
+## v1.0 (2026-09-28): 項目指定表(R/15_item_scale.csv)の規則を通す項目を、実データと同じ変数名で加える(数値は論文に使わない)
+##   DQ15 (1・2 をまとめる再符号化) / DQ30 (名義 → 指標; 7=8 の再符号化; 10 = わからない) / DQ42_A, DQ42_B, DQ42_G (「わからない」の指標で欠損に)
+##   DQ03_1・JC_1 (非該当追加 10;11 と 12=3) / DQ03_2・JC_2 (対応表の map:10=8; 区分 C の該当者 ZQ03 = 1)
+##   DQ57A-D と構成要素 (時刻の派生; w1 は ZQ02A-D) / DQ54_1Y・M と ZQ59_1Y・M (月数の派生; 区分 C の該当者 ZQ58)
+##   DQ03_5E・DQ03_5ES (フィルター) / DQ03_13 と ZQ05_5Y (区分 C の該当者 ZQ03 = 1) / DQ17A (尺度外コード 4 を非該当に)
+lab_smoke <- c("喫煙したことがない" = 1, "禁煙した" = 2, "1～10本" = 3, "11～20本" = 4, "21本以上" = 5, "無回答" = 9)
+mk_smoke <- function(tau) { z <- 0.5 * u + rnorm(n); v <- cut(z + tau, c(-Inf, -0.6, -0.1, 0.4, 1.0, Inf), labels = FALSE); v[runif(n) < 0.02] <- 9; v }
+d$DQ15 <- labelled(as.numeric(mk_smoke(ifelse(cn == 1, 0.2, 0))), lab_smoke, label = "w5問15_喫煙")
+d$ZQ15 <- labelled(as.numeric(mk_smoke(0)), lab_smoke, label = "問15_喫煙")
+## party support: the real 9 codes; code 7 is a different party at the two waves (2011 みんなの党, 2007 新党日本), which
+## the table folds into 8 = その他の政党 at both waves (recode 7=8)
+lab_party <- c("自民党" = 1, "民主党" = 2, "公明党" = 3, "共産党" = 4, "社民党" = 5, "国民新党" = 6, "みんなの党" = 7,
+               "その他の政党" = 8, "特に支持する政党はない" = 9, "わからない" = 10, "無回答" = 99)
+lab_party_w1 <- lab_party; names(lab_party_w1)[7] <- "新党日本"
+mk_party <- function(shift) { pr <- c(.25, .20, .05, .03, .02, .01, .04, .02, .38); v <- sample(1:9, n, TRUE, prob = pr); v[runif(n) < .08 + shift] <- 10; v[runif(n) < .02] <- 99; v }
+d$DQ30 <- labelled(as.numeric(mk_party(-0.03)), lab_party, label = "w5問30_支持政党")
+d$ZQ30 <- labelled(as.numeric(mk_party(0)), lab_party_w1, label = "問30_支持政党")
+## work status (問3(1) / 2007 問4A(1)): the provider's 12 codes (10, 11 = not working, from the routing of 問2; 12 = students
+## working non-regularly, split out of 3); the table sets 10, 11 to not applicable and 12 back to 3 (codes 1-9 as on the
+## questionnaire). occupation (問3(2) / 2007 問4A(2)): 8 precodes; 2007 also has 9 = わからない and an after-code 10 = 農林,
+## which 15_entry_overrides.csv folds into 8. The 2007 counterparts have the provider's names JC_1 and JC_2.
+lab_work <- c("経営者、役員" = 1, "正社員・正職員" = 2, "パート・アルバイト・契約・臨時・嘱託" = 3, "派遣社員" = 4, "請負社員" = 5,
+              "自営業主、自由業者" = 6, "家族従業者" = 7, "内職" = 8, "その他" = 9, "無職(学生は除く)" = 10, "学生(働いていない)" = 11,
+              "学生(現在非正規で働いている)" = 12, "非該当" = 88, "無回答" = 99)
+lab_work_w1 <- lab_work; names(lab_work_w1)[7] <- "家族従事者"
+mk_work <- function(emp) {                       # emp: the wave's 就業 marker (1 = working, 2 = not, NA = not interviewed)
+  v <- sample(c(1:9, 12), n, TRUE, prob = c(.03, .55, .18, .05, .02, .06, .02, .01, .02, .06))
+  v[!is.na(emp) & emp == 2] <- sample(10:11, n, TRUE, prob = c(.75, .25))[!is.na(emp) & emp == 2]
+  v[!is.na(emp) & runif(n) < .01] <- 99; v[is.na(emp)] <- NA; v
+}
+numv <- function(x) as.numeric(zap_labels(x))
+d$DQ03_1 <- labelled(as.numeric(mk_work(numv(d$DQ02))), lab_work, label = "w5問3(1)_現職・働き方")
+d$JC_1   <- labelled(as.numeric(mk_work(numv(d$ZQ03))), lab_work_w1, label = "問4A(1)_現職・働き方")
+lab_occ <- c("専門職・技術職" = 1, "管理職" = 2, "事務職" = 3, "販売職" = 4, "サービス職" = 5, "生産現場職・技能職" = 6,
+             "運輸・保安職" = 7, "その他" = 8, "非該当" = 88, "無回答" = 99)
+lab_occ_w1 <- c(lab_occ[1:8], "わからない" = 9, "農林" = 10, "非該当" = 88, "無回答" = 99)
+mk_occ <- function(emp, w1 = FALSE) {
+  v <- sample(1:8, n, TRUE, prob = c(.20, .05, .25, .10, .12, .18, .05, .05))
+  if (w1) { v[runif(n) < .02] <- 9; v[runif(n) < .01] <- 10 }
+  v[!is.na(emp) & emp == 2] <- 88; v[!is.na(emp) & runif(n) < .01] <- 99; v[is.na(emp)] <- NA; v
+}
+d$DQ03_2 <- labelled(as.numeric(mk_occ(numv(d$DQ02))), lab_occ, label = "w5問3(2)_現職・職業―大分類(プリコード)")
+d$JC_2   <- labelled(as.numeric(mk_occ(numv(d$ZQ03), w1 = TRUE)), lab_occ_w1, label = "問4A(2)_現職・職業―大分類(プリコード)")
+lab_sel <- c("選択" = 1, "非選択" = 2, "無回答" = 9)
+ins <- sample(1:3, n, TRUE, prob = c(.5, .4, .1))      # 1 = A, 2 = B, 3 = わからない(G)
+d$DQ42_A <- labelled(as.numeric(ifelse(ins == 1, 1, 2)), lab_sel, label = "w5問42_健康保険―A")
+d$DQ42_B <- labelled(as.numeric(ifelse(ins == 2, 1, 2)), lab_sel, label = "w5問42_健康保険―B")
+d$DQ42_G <- labelled(as.numeric(ifelse(ins == 3, 1, 2)), lab_sel, label = "w5問42_健康保険―わからない")
+## clock times: format code (1 = a time is given, 2 = not fixed, 3 = mainly at home for B and C) and the AM/PM, hour, minute components
+lab_fmt2 <- c("だいたい午前／午後×時○分ころ" = 1, "特に決まっていない" = 2, "無回答" = 9)
+lab_fmt3 <- c("だいたい午前／午後×時○分ころ" = 1, "特に決まっていない" = 2, "主に家にいる" = 3, "無回答" = 9)
+lab_fmt3w1 <- c("だいたい×時○分ころ" = 1, "特に決まっていない" = 2, "主に家にいる" = 3, "無回答" = 9)
+lab_ap <- c("午前" = 1, "午後" = 2, "非該当" = 8, "無回答" = 9); lab_hm <- c("非該当" = 88, "無回答" = 99)
+mk_clock <- function(prefix, fmt_var, kind, w1 = FALSE, three = FALSE) {
+  fmt <- sample(if (three) 1:3 else 1:2, n, TRUE, prob = if (three) c(.8, .12, .08) else c(.9, .1))
+  if (w1 && !three) fmt[runif(n) < .01] <- 3                        # the w1 codebook artefact (a third code for A and D)
+  h24 <- switch(kind, wake = round(rnorm(n, 6.5, 1)), leave = round(rnorm(n, 8, 1)), ret = round(rnorm(n, 19, 2.5)), bed = round(rnorm(n, 23.5, 1.2)))
+  h24 <- ((h24 %% 24) + 24) %% 24
+  X <- ifelse(h24 >= 12, 2, 1); Y <- h24 %% 12; Z <- sample(c(0, 15, 30, 45), n, TRUE)
+  X[fmt != 1] <- 8; Y[fmt != 1] <- 88; Z[fmt != 1] <- 88
+  nr <- runif(n) < .01; X[nr] <- 9; Y[nr] <- 99; Z[nr] <- 99
+  d[[fmt_var]] <<- labelled(as.numeric(fmt), if (three) (if (w1) lab_fmt3w1 else lab_fmt3) else lab_fmt2, label = paste0(prefix, "_時刻の回答形式"))
+  d[[paste0(fmt_var, "X")]] <<- labelled(as.numeric(X), lab_ap, label = paste0(prefix, "―午前午後"))
+  d[[paste0(fmt_var, "Y")]] <<- labelled(as.numeric(Y), lab_hm, label = paste0(prefix, "―時"))
+  d[[paste0(fmt_var, "Z")]] <<- labelled(as.numeric(Z), lab_hm, label = paste0(prefix, "―分"))
+}
+mk_clock("w5問57A_起床", "DQ57A", "wake"); mk_clock("w5問57B_家を出る", "DQ57B", "leave", three = TRUE)
+mk_clock("w5問57C_帰宅", "DQ57C", "ret", three = TRUE); mk_clock("w5問57D_就寝", "DQ57D", "bed")
+mk_clock("問2A_起床", "ZQ02A", "wake", w1 = TRUE); mk_clock("問2B_家を出る", "ZQ02B", "leave", w1 = TRUE, three = TRUE)
+mk_clock("問2C_帰宅", "ZQ02C", "ret", w1 = TRUE, three = TRUE); mk_clock("問2D_就寝", "ZQ02D", "bed", w1 = TRUE)
+## duration of the relationship (years and months) and the 2007 partner status (class C subgroup)
+lab_partner <- c("婚約者がいる" = 1, "特定の交際相手がいる" = 2, "現在はいない" = 3, "無回答" = 9)
+d$ZQ58 <- labelled(as.numeric(sample(1:3, n, TRUE, prob = c(.1, .3, .6))), lab_partner, label = "問58_現在交際している人はいるか")
+mk_dur <- function() { yrs <- pmax(0, round(rnorm(n, 2, 1.5))); mos <- sample(0:11, n, TRUE); nap <- runif(n) < .6; yrs[nap] <- 88; mos[nap] <- 88; list(y = yrs, m = mos) }
+du5 <- mk_dur(); du1 <- mk_dur()
+d$DQ54_1Y <- labelled(as.numeric(du5$y), lab_hm, label = "w5問54(1)_交際期間―年"); d$DQ54_1M <- labelled(as.numeric(du5$m), lab_hm, label = "w5問54(1)_交際期間―月")
+d$ZQ59_1Y <- labelled(as.numeric(du1$y), lab_hm, label = "問59(1)_交際期間―年"); d$ZQ59_1M <- labelled(as.numeric(du1$m), lab_hm, label = "問59(1)_交際期間―月")
+## annual-salary amount recorded for everyone (a filter keeps those who chose that pay form)
+d$DQ03_5E <- labelled(as.numeric(ifelse(runif(n) < .25, 1, 2)), lab_sel, label = "w5問3(5)-5_収入の形態―年俸")
+d$DQ03_5ES <- labelled(as.numeric(ifelse(d$DQ03_5E == 1, round(300 + 80 * u + rnorm(n) * 60), 0)), NULL, label = "w5問3(5)-5_収入の金額―年俸")
+## continuation of the current job (asked of workers only; 2007 also of the last job) and the scale-external code of DQ17A
+lab_cont <- c("続けるつもり" = 1, "やめることを考えている" = 2, "すぐにやめる" = 3, "わからない" = 4, "非該当" = 8, "無回答" = 9)
+mk_cont <- function() { v <- sample(1:3, n, TRUE, prob = c(.7, .2, .1)); v[runif(n) < .05] <- 4; v[runif(n) < .02] <- 9; v }
+d$DQ03_13 <- labelled(as.numeric(ifelse(d$DQ02 == 1, mk_cont(), 8)), lab_cont, label = "w5問3(13)_現在の会社で当面仕事を続けるか")
+d$ZQ05_5Y <- labelled(as.numeric(mk_cont()), lab_cont, label = "問5(5)_現在の会社での仕事や事業の継続")
+lab_smk_par <- c("まったく吸ったことがない" = 1, "禁煙していた" = 2, "吸っていた" = 3, "その時父・母はいなかった" = 4, "無回答" = 9)
+d$DQ17A <- labelled(as.numeric({ v <- sample(1:4, n, TRUE, prob = c(.3, .2, .45, .05)); v[runif(n) < .02] <- 9; v }), lab_smk_par, label = "w5問17A_中3時の父親の喫煙")
+
 ## 非回答者は w5 項目を欠測に(DQ02 系以外)
 w5vars <- grep("^DQ", names(d), value = TRUE)
 for (v in w5vars) { x <- d[[v]]; x[R[, 5] == 0] <- NA; d[[v]] <- x }

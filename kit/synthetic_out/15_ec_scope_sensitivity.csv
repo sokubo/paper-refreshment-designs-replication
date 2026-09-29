@@ -1,0 +1,9 @@
+"dose_def","estimator","scope","n_items","n_affected"
+"any","ec","all entry-wave items",77,5
+"any","ec","main (A+B+C)",76,4
+"any","ec_adj","all entry-wave items",77,5
+"any","ec_adj","main (A+B+C)",76,4
+"exact","ec","all entry-wave items",77,5
+"exact","ec","main (A+B+C)",76,4
+"exact","ec_adj","all entry-wave items",77,5
+"exact","ec_adj","main (A+B+C)",76,4

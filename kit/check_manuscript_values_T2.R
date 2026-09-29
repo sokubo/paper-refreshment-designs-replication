@@ -3,7 +3,9 @@
 # T2 — every number quoted in Section 10 and in the negative-control appendix table, reproduced
 # mechanically from the aggregate outputs of the JLPS pipeline (the counterpart of the simulation
 # checker sims/check_manuscript_values.R). Inputs are aggregates only (cells below ten suppressed);
-# no individual record is read.
+# no individual record is read. Version of 2026-09-29: the quoted values are those of the licensed run
+# of 29 September 2026 with kit v1.0 (item specification table R/15_item_scale.csv, whose MD5 the run
+# record 15_env.txt carries and which this checker compares with the table shipped in R/).
 #   Rscript check_manuscript_values_T2.R [<results directory>]            check the quoted values
 #   Rscript check_manuscript_values_T2.R [<results directory>] --selftest check, then check the checker
 #     default results directory: ../../P1_jlps_diagnosis/results
@@ -17,13 +19,18 @@ args <- commandArgs(trailingOnly = TRUE)
 SELFTEST <- "--selftest" %in% args; args <- setdiff(args, "--selftest")
 RES0 <- if (length(args)) args[1] else file.path("..", "..", "P1_jlps_diagnosis", "results")
 
+## the item specification table the run must have used (shipped in R/ next to this checker)
+SCRIPT_DIR <- local({ a <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)); if (length(a)) dirname(normalizePath(a[1])) else "." })
+ITEM_TABLE <- file.path(SCRIPT_DIR, "R", "15_item_scale.csv")
+
 ## the licensed input all quoted numbers come from (identity only, never content)
 INPUT <- list(file   = "ZQ115AQ212BQ116CQ111DQ211EQ115FQ108GQ112HQ112IQ107JQ109KQ105LQ106MQ107NQ304OQ103PQ203QQ201RQ102.dta",
               sha256 = "d7fea333353e78bacde801045ae433ee3f24ae8d6b3e5af48d5720fec55306c5")
 
 REQUIRED <- c("15_arms.csv", "15_detection_counts.csv", "15_diagnostics_summary.csv", "15_designs_items.csv",
               "15_mass_diagnostic_summary.csv", "15_mass_diagnostic_flags.csv", "15_tests_items.csv", "15_routing_sensitivity.csv",
-              "15_style_sensitivity.csv", "15_style_items_audit.csv", "15_env.txt", "04_item_meta.csv",
+              "15_style_sensitivity.csv", "15_style_items_audit.csv", "15_env.txt", "04_item_meta.csv", "15_ec_status.csv",
+              "15_ec_scope_sensitivity.csv", "15_ec_counts_by_class.csv",
               "11_negcontrol_w13_summary.csv", "11_negcontrol_w13.csv", "11_env.txt",
               "11b_negcontrol_w13_pooled.csv", "11b_negcontrol_w13_corr.csv", "11b_loading_grid.csv", "11b_env.txt")
 
@@ -64,6 +71,7 @@ run_checks <- function(RES, verbose = TRUE) {
     g <- function(tag) { v <- sub(paste0("^", tag, ":\\s*"), "", grep(paste0("^", tag, ":"), x, value = TRUE)); if (length(v) == 1L) v else NA_character_ }
     c(file = g("input"), sha256 = g("input sha256"))
   }
+  env_line <- function(f, pat) { v <- grep(pat, readLines(file.path(RES, f), warn = FALSE), value = TRUE); if (length(v) == 1L) v else NA_character_ }
 
   say(sprintf("%-58s %-22s %-22s %s\n", "quantity (Section 10)", "from outputs", "quoted in paper", ""))
   say(strrep("-", 112), "\n")
@@ -92,7 +100,25 @@ run_checks <- function(RES, verbose = TRUE) {
   chk("entrants surviving four further waves", arms$n_new_sm, 574)
   chk("entrants surviving five further waves", arms$n_new_sm1, 540)
   chk("bootstrap replications", arms$B, 500)
-  chk("items with the same coding at entry", arms$n_ec_items, 268)
+  chk("columns with an entry-wave counterpart (same codes after the table's recodes)", arms$n_ec_items, 320)
+  chk("of them in the main entry-wave analysis (classes A, B, C)", arms$n_ec_items_main, 269)
+
+  ## --- the item universe of kit v1.0 (item specification table; 04_item_meta.csv) ------------------
+  tab_md5 <- if (file.exists(ITEM_TABLE)) unname(tools::md5sum(ITEM_TABLE)) else NA_character_
+  chk("the run used the item specification table shipped in R/ (MD5 recorded in 15_env.txt)",
+      env_line("15_env.txt", "^item scale: "), paste0("item scale: 15_item_scale.csv md5: ", tab_md5))
+  tb <- if (file.exists(ITEM_TABLE)) fread(ITEM_TABLE, encoding = "UTF-8", colClasses = "character", na.strings = NULL) else data.table(var = character(0), scale = character(0), construct = character(0))
+  chk("wave-5 variables in the table / excluded by it / nominal single-choice questions / derived items",
+      c(sum(!grepl("^(clock|months):", tb$construct)), sum(tb$scale == "exclude"), sum(tb$scale == "nominal"), sum(grepl("^(clock|months):", tb$construct))), UNIV$table)
+  im <- rd("04_item_meta.csv"); uniq(im, "var", "04_item_meta")
+  imu <- im[in_universe %in% TRUE]
+  chk("columns in the universe", nrow(imu), UNIV$n)
+  chk("universe by declared scale: binary / ordinal / continuous items, indicators, derived items",
+      c(imu[spec_scale == "binary" & construct == "", .N], imu[spec_scale == "ordinal", .N], imu[spec_scale == "continuous" & construct == "", .N],
+        imu[spec_scale == "nominal", .N], imu[grepl("^(clock|months):", construct), .N]), UNIV$by_scale)
+  chk("nominal questions represented by the indicators", uniqueN(imu[spec_scale == "nominal", qgroup]), UNIV$table[3])
+  chk("no wave-5 variable outside the table entered the universe (04_items_unlisted.csv is empty)",
+      as.numeric(!file.exists(file.path(RES, "04_items_unlisted.csv")) || nrow(fread(file.path(RES, "04_items_unlisted.csv"))) == 0L), 1)
 
   ## --- waterfall over all items with variation --------------------------------
   g <- function(e, col) one(dc[estimator == e], paste("detection counts", e))[[col]]
@@ -100,23 +126,38 @@ run_checks <- function(RES, verbose = TRUE) {
   chk("flagged: naive / survival matching / symmetric matching / entry-wave / standardised",
       c(g("naive", "n_affected"), g("sm", "n_affected"), g("ssm", "n_affected"), g("ec", "n_affected"), g("ec_adj", "n_affected")), COUNTS$flagged)
   chk("items in the counts: survival / symmetric matching", c(g("sm", "n_items"), g("ssm", "n_items")), COUNTS$n_matched)
-  chk("items with an available entry wave", g("ec", "n_items"), 227)
+  chk("columns in the entry-wave counts (main analysis with variation, sensitivity variant excluded)", g("ec", "n_items"), 268)
 
-  ## --- restricted to the common set of 227 ------------------------------------
+  ## --- the columns outside the counts, and the entry-wave classes -------------------------------
   A <- it[family == "A_substantive"]
   if (!"routing_followup" %in% names(A)) stop("15_designs_items.csv has no routing_followup column: rerun R/15_panelcond_designs.R with this kit", call. = FALSE)
-  u <- unique(A[, .(var, exclude_flag, count_exclude, routing_followup)])
-  chk("items in the inventory", nrow(u), 478)
-  chk("outside the counts: listed codes / routing only", c(sum(u$exclude_flag), sum(u$count_exclude & !u$exclude_flag)), COUNTS$excluded)
-  rtf <- unique(A[, .(var, nr_routing_flag, exclude_flag)])
-  chk("routing-flagged items that are also on the exclusion list", sum(rtf$nr_routing_flag %in% TRUE & rtf$exclude_flag), 3)
+  if (!all(c("ec_class", "ec_main") %in% names(A))) stop("15_designs_items.csv has no ec_class/ec_main columns: rerun R/15_panelcond_designs.R with this kit", call. = FALSE)
+  u <- unique(A[estimator == "naive", .(var, exclude_flag, count_exclude, routing_followup, nr_routing_flag)])
+  chk("columns in the universe (design file)", nrow(u), UNIV$n)
+  chk("outside every count: sensitivity variant (in_counts = FALSE) / routing-flagged / follow-up",
+      c(sum(u$exclude_flag), sum(u$nr_routing_flag %in% TRUE & !u$exclude_flag), sum(u$routing_followup & !u$exclude_flag & !(u$nr_routing_flag %in% TRUE))), COUNTS$excluded)
+  chk("the sensitivity variant outside the counts is the bedtime with 12 pm set to missing", u[exclude_flag == TRUE, var], "dq57d_hr_s12")
   chk("follow-up of a routing-flagged question (outside the counts)", paste(sort(u[routing_followup & !exclude_flag, var]), collapse = ", "), COUNTS$followup)
-  ## the detection counts cover items with variation that are outside neither 15_item_exclude.csv (nominal codes,
-  ## date and clock-time components, duplicate recodes) nor the routing flag (count_exclude); the common set is
-  ## defined the same way
+  ## entry-wave classes: 15_ec_status.csv (every column), 15_ec_counts_by_class.csv (columns in the entry-wave counts)
+  es <- rd("15_ec_status.csv"); uniq(es, "var", "15_ec_status")
+  chk("entry-wave counterpart: total / routing-flagged among them / class D / main (A, B, C)",
+      c(sum(es$ec_ok), sum(es$ec_ok & es$var %in% u[nr_routing_flag %in% TRUE, var]), sum(es$ec_ok & es$ec_class == "D"), sum(es$ec_ok & es$ec_main)), EC$status)
+  cb <- rd("15_ec_counts_by_class.csv")[dose_def == "exact" & estimator == "ec"]; uniq(cb, "cls", "15_ec_counts_by_class (exact, ec)")
+  ncls <- function(k) one(cb[cls == k], paste("class", k))$n_items
+  chk("columns in the entry-wave counts by class: A + B (same question) / C (2007 subgroup) / D (outside the counts)",
+      c(ncls("A") + ncls("B"), ncls("C"), ncls("D")), EC$by_class)
+  sc <- rd("15_ec_scope_sensitivity.csv")[dose_def == "exact"]; uniq(sc, c("estimator", "scope"), "15_ec_scope_sensitivity (exact)")
+  scv <- function(e, sco) one(sc[estimator == e & scope == sco], paste("scope", e, sco))$n_affected
+  chk("entry-wave counts, main scope, reproduce the detection counts (ec / ec_adj)", c(scv("ec", "main (A+B+C)"), scv("ec_adj", "main (A+B+C)")), COUNTS$flagged[4:5])
+  chk("admitting the class-D columns raises the two entry-wave counts by two each", c(scv("ec", "all entry-wave items") - scv("ec", "main (A+B+C)"), scv("ec_adj", "all entry-wave items") - scv("ec_adj", "main (A+B+C)")), c(2, 2))
+  chk("class-C subgroups used (2007: the employed, employees, the married, with a partner, parents)",
+      sort(unique(es[ec_ok & ec_class == "C", ec_subgroup])), c("employed2007", "employee2007", "married2007", "parent2007", "partner2007"))
+  ## the detection counts cover columns with variation that are inside the counts (count_exclude = FALSE: not
+  ## routing-flagged, not the sensitivity variant and, for the entry-wave estimators, in the main analysis); the
+  ## common set is defined the same way
   A <- A[class3 != "n/a (no variation)" & !count_exclude]
   common <- A[estimator == "ec", unique(var)]
-  chk("items in the detection counts with an entry-wave counterpart", length(common), 227)
+  chk("columns in the detection counts with an entry-wave counterpart in the main analysis", length(common), 268)
   cnt <- sapply(c("naive", "sm", "ssm", "ec", "ec_adj"),
                 function(e) A[estimator == e & var %in% common & class3 == "affected", uniqueN(var)])
   chk("common set: naive / sm / ssm / ec / ec_adj", cnt, COUNTS$common)
@@ -131,8 +172,8 @@ run_checks <- function(RES, verbose = TRUE) {
   chk("T_NS: rejections / items with the statistic (entry wave needed)", c(dA$n_T1_reject, dA$n_T1_tests), DIAG$ns)
   chk("T_SD: rejections / items with the statistic", c(dA$n_T2_reject, dA$n_T2_tests), DIAG$sd)
   chk("T_SD on item nonresponse: rejections / indicators", c(dB$n_T2_reject, dB$n_T2_tests), DIAG$sd_nr)
-  chk("T_NS rejections, substantive items (13.2%)", one(dg[family == "A_substantive"], "diagnostics A")$share_T1_p05, 0.132, 5e-4)
-  chk("T_SD rejections, substantive items (9.0%)", one(dg[family == "A_substantive"], "diagnostics A")$share_T2_p05, 0.090, 5e-4)
+  chk("T_NS rejections, substantive columns (14.6%)", one(dg[family == "A_substantive"], "diagnostics A")$share_T1_p05, DIAG$share_ns, 5e-4)
+  chk("T_SD rejections, substantive columns (8.8%)", one(dg[family == "A_substantive"], "diagnostics A")$share_T2_p05, DIAG$share_sd, 5e-4)
   ## item nonresponse: the rejections that come from four question grids answered or skipped as a block
   tsd <- rd("15_tests_items.csv")[dose_def == "exact" & family == "B_itemnonresp" & count_exclude == FALSE]
   uniq(tsd, "var", "15_tests_items (exact, item nonresponse)")
@@ -153,8 +194,10 @@ run_checks <- function(RES, verbose = TRUE) {
   chk("items of the common battery with a neutral midpoint", au[in_main_midpoint %in% TRUE, .N], STYLE$n_mid)
   chk("rating items with a verified neutral midpoint (all, same-wave designs)", au[set == "rating" & midpoint_verified %in% TRUE, .N], STYLE$n_mid_all)
   chk("no item outside the rating set, and no unverified item, enters the main composites", au[in_main %in% TRUE & !(set == "rating" & codes_verified %in% TRUE & entry_wave_ok %in% TRUE), .N], 0)
-  chk("items the v0.7 rule admitted that are not rating scales (incl. marital status)",
-      c(au[in_v07_rule %in% TRUE & !(set == "rating" & codes_verified %in% TRUE), .N], as.numeric("DQ43" %in% toupper(au[in_v07_rule %in% TRUE & set != "rating", var]))), STYLE$n_v07_extra)
+  chk("items the v0.7 rule admits on the present universe that are not rating scales / frequency scales among them",
+      c(au[in_v07_rule %in% TRUE & !(set == "rating" & codes_verified %in% TRUE), .N], au[in_v07_rule %in% TRUE & set == "frequency", .N]), STYLE$n_v07_extra)
+  chk("the v0.7 rule admits occupational rank, smoking, drinking and the partner's education (4-7 codes), but no nominal code (now indicators)",
+      c(all(c("DQ03_3", "DQ15", "DQ16", "DQ54_3") %in% toupper(au[in_v07_rule %in% TRUE, var])), any(grepl("__", au[in_v07_rule %in% TRUE, var]))), c(TRUE, FALSE))
   ss <- rd("15_style_sensitivity.csv")[dose_def == "exact"]; uniq(ss, c("battery", "indicator", "estimator"), "15_style_sensitivity (exact)")
   sv <- function(b, i) { r <- ss[battery == b & indicator == i][order(match(estimator, c("naive", "sm", "ssm", "ec", "ec_adj")))]; r$d_std }
   chk("v0.7 rule as run (all 4-7-code items): extreme use, five designs (regression to v0.7)", round(sv("v07_asrun", "ext"), 4), STYLE$v07_ext)
@@ -181,16 +224,16 @@ run_checks <- function(RES, verbose = TRUE) {
   emp <- A[var == "DQ02"]
   chk("employment, entry-wave corrected (percentage points)",
       round(100 * one(emp[estimator == "ec"], "DQ02 ec")$estimate, 1), -4.9, 0.05)
-  chk("employment, unstandardised: q (.02) below .10",
-      round(one(emp[estimator == "ec"], "DQ02 ec")$q, 2), 0.02, 5e-3)
+  chk("employment, unstandardised: q (.03) below .10",
+      round(one(emp[estimator == "ec"], "DQ02 ec")$q, 2), 0.03, 5e-3)
   chk("employment, standardised: q above .10",
       as.numeric(one(emp[estimator == "ec_adj"], "DQ02 ec_adj")$q > 0.10), 1)
-  chk("employment, standardised: q (.15)", round(one(emp[estimator == "ec_adj"], "DQ02 ec_adj")$q, 2), 0.15, 5e-3)
+  chk("employment, standardised: q (.14)", round(one(emp[estimator == "ec_adj"], "DQ02 ec_adj")$q, 2), 0.14, 5e-3)
   chk("employment, naive: q (.38)", round(one(emp[estimator == "naive"], "DQ02 naive")$q, 2), 0.38, 5e-3)
-  ## direction: DQ02 keeps its raw codes (1 = working, 2 = not working); its follow-up DQ02_1 is reached only by those
+  ## direction: DQ02 keeps its raw codes (1 = working, 2 = not working); its follow-up DQ02_2 is reached only by those
   ## not working, and the naive contrast over the wave-5 risk set (dose "any") equals the difference in that reach rate,
   ## so a negative estimate means that continuing respondents are MORE often employed
-  im <- rd("04_item_meta.csv"); f1 <- one(im[toupper(var) == "DQ02_1"], "04_item_meta DQ02_1")
+  f1 <- one(im[toupper(var) == "DQ02_2"], "04_item_meta DQ02_2")
   nv_any <- one(rd("15_designs_items.csv")[dose_def == "any" & family == "A_substantive" & var == "DQ02" & estimator == "naive"], "DQ02 naive, dose any")$estimate
   chk("DQ02 coding: naive contrast (any dose) = difference in the not-working share", round(nv_any - (f1$base_rate_T1 - f1$base_rate_T0), 3), 0, 1.5e-3)
   chk("employment: the entry-wave-corrected contrast is negative (more often employed)", as.numeric(one(emp[estimator == "ec"], "DQ02 ec")$estimate < 0), 1)
@@ -207,13 +250,13 @@ run_checks <- function(RES, verbose = TRUE) {
   chk("largest ratio in a supported category",                ms$max_supported_ratio,   MASS$max_supported, 5e-4)
   fl <- rd("15_mass_diagnostic_flags.csv")[dose_def == "exact"]
   uniq(fl, "var", "15_mass_diagnostic_flags (exact)")
-  chk("item with the largest finite ratio", one(fl[funnel_ratio == max(funnel_ratio, na.rm = TRUE)], "largest finite ratio")$var, MASS$max_finite_item)
+  chk("column with the largest finite ratio (mother died in the past year, DQ09_D)", one(fl[funnel_ratio == max(funnel_ratio, na.rm = TRUE)], "largest finite ratio")$var, MASS$max_finite_item)
+  chk("second largest finite ratio (expects to take over the family business, DQ56_C)", c(fl[order(-funnel_ratio)][2, var], round(fl[order(-funnel_ratio)][2, funnel_ratio], 3)), c("DQ56_C", "1.27"))
+  chk("both largest ratios exceed one only in sparse categories", as.numeric(all(fl[var %in% c("DQ09_D", "DQ56_C"), funnel_ratio_supported] <= 1)), 1)
   chk("items exceeding one in a supported category", sort(fl[funnel_ratio_supported > 1, var]), MASS$supported_items)
-  pid <- one(fl[var == "DQ30"], "party identification (DQ30) among the flags")
-  chk("party identification: finite ratio", pid$funnel_ratio, MASS$party_id, 5e-4)
   chk("siblings for help in finding work (DQ08B_4): supported ratio", one(fl[var == "DQ08B_4"], "DQ08B_4")$funnel_ratio_supported, 1.020, 5e-4)
   chk("spouse prepares meals (DQ45A): supported ratio", one(fl[var == "DQ45A"], "DQ45A")$funnel_ratio_supported, 1.192, 5e-4)
-  chk("party identification exceeds one only in sparse categories", as.numeric(pid$funnel_ratio_supported <= 1), 1)
+  chk("positive/zero columns asked only of a subgroup (reach below one in an arm)", sum(fl[funnel_zero_denom > 0, reach_new < 1 | reach_old_S < 1]), MASS$zero_denom_subgroup)
   ## positive/zero items in the marriage-history block flagged for differential item nonresponse or routing
   rt <- unique(it[family == "A_substantive", .(var, nr_routing_flag)])
   chk("positive/zero items on how a respondent with a fiancé(e) or partner met that person (DQ54_2*)", sum(grepl("^DQ54_2", toupper(fl[funnel_zero_denom > 0, var]))), 6)
@@ -225,30 +268,30 @@ run_checks <- function(RES, verbose = TRUE) {
   chk("the same, recounted from the flag list", c(sum((fl$funnel_ratio > 1 | fl$funnel_zero_denom > 0) & fl$funnel_identity_feasible %in% FALSE, na.rm = TRUE),
       sum(fl$funnel_ratio > 1 & fl$funnel_identity_feasible %in% FALSE, na.rm = TRUE)), MASS$not_reconcilable[1:2])
   chk("median fresh missing mass among eligible items (1.8%)", ms$median_fresh_missing_mass, MASS$median_missing, 5e-4)
-  chk("the one flag not reconcilable is the minute of bedtime (DQ57DZ), a positive/zero item with no fresh missing mass",
-      c(fl[funnel_identity_feasible %in% FALSE, var], as.character(fl[var == "DQ57DZ", funnel_zero_denom] > 0), as.character(fl[var == "DQ57DZ", funnel_missing_mass])), c("DQ57DZ", "TRUE", "0"))
-  chk("largest mass needed to cover the stayers among the flagged items (.0074)", max(fl$funnel_needed_mass, na.rm = TRUE), 0.0074, 5e-5)
+  chk("every flagged column is reconcilable (no clock-time component is in the universe any more)", c(sum(fl$funnel_identity_feasible %in% FALSE), sum(grepl("^DQ57[ABCD][XYZ]$", toupper(fl$var)))), c(0, 0))
+  chk("largest mass needed to cover the stayers among the flagged columns (.0065)", max(fl$funnel_needed_mass, na.rm = TRUE), MASS$max_needed, 5e-5)
   tst <- rd("15_tests_items.csv")[dose_def == "exact" & family == "A_substantive" & !is.na(funnel_ncat)]
   gap <- tst$reach_new - tst$reach_old_S
-  chk("reach rates of the two arms differ by less than ten points over the 419 items (max gap in points, one decimal)", round(100 * max(abs(gap)), 1), 9.1, 5e-2)
+  chk("eligible columns of the mass diagnostic in the test file", nrow(tst), MASS$eligible)
+  chk("reach rates of the two arms differ by less than ten points over the 410 columns (max gap in points, one decimal)", round(100 * max(abs(gap)), 1), 9.1, 5e-2)
   chk("largest reach gaps: owner-occupied housing follow-ups (DQ39_*) and the unmarried block (DQ50)",
       c(all(grepl("^DQ39_", tst$var[abs(gap) > 0.08])), any(grepl("^DQ50$", tst$var[gap > 0.07]))), c(TRUE, TRUE))
-  chk("items named in the text: reconcilable (spouse's occupation, party identification, meals, siblings)",
-      as.numeric(fl[match(c("dq44_2l", "DQ30", "DQ45A", "DQ08B_4"), var), funnel_identity_feasible]), MASS$named_feasible)
+  chk("items named in the text: reconcilable (mother died, family business, meals, siblings)",
+      as.numeric(fl[match(c("DQ09_D", "DQ56_C", "DQ45A", "DQ08B_4"), var), funnel_identity_feasible]), MASS$named_feasible)
   ## routing-threshold sensitivity (the flag recomputed at 10 and 20 points and with no routing exclusion)
   rs <- rd("15_routing_sensitivity.csv")[dose_def == "exact"]
   uniq(rs, "threshold", "15_routing_sensitivity (exact)")
   r15 <- one(rs[abs(threshold - 0.15) < 1e-9], "routing sensitivity, threshold .15")
   chk("routing gap recomputed in 15 at .15 reproduces 04's flag (disagreements)", r15$n_disagree_with_04, 0)
   chk("threshold .15 reproduces the main counts: naive / sm / ssm / ec / ec_adj", c(r15$aff_naive, r15$aff_sm, r15$aff_ssm, r15$aff_ec, r15$aff_ec_adj), COUNTS$flagged)
-  chk("threshold .15 reproduces the routing exclusions and the follow-up", c(r15$n_routing, r15$n_followup), c(COUNTS$excluded[2] - 1, 1))
+  chk("threshold .15 reproduces the routing exclusions and the follow-up", c(r15$n_routing, r15$n_followup), c(COUNTS$excluded[2], COUNTS$excluded[3]))
   sens <- function(th) { r <- one(if (is.finite(th)) rs[abs(threshold - th) < 1e-9] else rs[!is.finite(threshold)], paste("routing sensitivity", th))
     c(r$n_routing + r$n_followup, r$aff_naive, r$aff_sm, r$aff_ssm, r$aff_ec, r$aff_ec_adj, r$n_all5) }
   chk("threshold .10: excluded / flagged x 5 / all five", sens(0.10), SENS$t10)
   chk("threshold .20: excluded / flagged x 5 / all five", sens(0.20), SENS$t20)
   chk("no routing exclusion: excluded / flagged x 5 / all five", sens(Inf), SENS$none)
   rnone <- one(rs[!is.finite(threshold)], "routing sensitivity, none")
-  chk("no routing exclusion: items in the counts (434) and the two items flagged by all five designs", c(rnone$n_items_naive, rnone$all5_items), c(434, COUNTS$all5_items_semicolon))
+  chk("no routing exclusion: columns in the counts (522) and the three items flagged by all five designs", c(rnone$n_items_naive, rnone$all5_items), c(522, COUNTS$all5_items_semicolon))
 
   ## --- 2019 episode, negative-control battery ---------------------------------
   chk("negative-control items at the 2019 episode", nc$n_items, 23)
@@ -298,22 +341,27 @@ run_checks <- function(RES, verbose = TRUE) {
 }
 
 ## values quoted in Section 10 that are set from the frozen rerun (counts, diagnostic denominators, mass diagnostic)
-COUNTS <- list(n_naive = 402, n_matched = c(401, 401), flagged = c(22, 16, 9, 20, 19), excluded = c(44, 32), followup = "DQ46Y",
-               common = c(15, 12, 6, 20, 19), n_all5 = 2, all5_items = "DQ26, DQ44_4A", all5_items_semicolon = "DQ26; DQ44_4A")
-DIAG <- list(ns = c(30, 227), sd = c(36, 401), sd_nr = c(66, 396), share_nr = 0.167, grid4 = c(50, 66))   # rejections and denominators (frozen rerun)
-SENS <- list(t10 = c(32, 22, 16, 9, 20, 19, 2), t20 = c(32, 22, 16, 9, 20, 19, 2), none = c(0, 23, 16, 10, 20, 19, 2))   # routing-threshold sensitivity (frozen rerun)
-## response-style composites (rerun of 2026-09-24 with the prespecified item list): ranges of d_std over the five designs;
-## the "v07" values are the composites of the v0.7 rule, reproduced by the new code for the record (they equal the v0.7 item file)
-STYLE <- list(ext_range = c(-0.32, -0.23), mid_range = c(0.19, 0.21), n_rating = c(46, 46, 41), n_mid = 25, n_mid_all = 28, n_freq_added = 24,
-              n_v07_extra = c(43, 1),
-              v07_ext = c(-0.2536, -0.2120, -0.2094, -0.2329, -0.2321), v07_mid = c(0.1868, 0.1993, 0.1994, 0.2081, 0.2056),
-              v07_ext_range = c(-0.25, -0.21), v07_mid_range = c(0.19, 0.21),
+## the item universe of kit v1.0 (the licensed run of 2026-09-29): the table's 540 wave-5 variables (53 excluded, 15 nominal) and 6 derived items;
+## 523 columns = 284 binary + 102 ordered + 41 continuous items + 90 indicators + 6 derived items
+UNIV <- list(table = c(540, 53, 15, 6), n = 523, by_scale = c(284, 102, 41, 90, 6))
+## entry-wave counterparts: 320 columns; 16 of them routing-flagged, 35 class D, 269 main (A, B, C); in the counts 181 (A + B) + 87 (C) = 268, 35 (D) outside
+EC <- list(status = c(320, 16, 35, 269), by_class = c(181, 87, 35))
+COUNTS <- list(n_naive = 490, n_matched = c(489, 489), flagged = c(30, 21, 13, 29, 23), excluded = c(1, 31, 1), followup = "DQ46Y",
+               common = c(18, 16, 9, 29, 23), n_all5 = 3, all5_items = "DQ26, DQ39__1, DQ55_Q", all5_items_semicolon = "DQ26; DQ39__1; DQ55_Q")
+DIAG <- list(ns = c(39, 268), sd = c(43, 489), sd_nr = c(73, 409), share_ns = 0.146, share_sd = 0.088, share_nr = 0.178, grid4 = c(50, 73))   # rejections and denominators (licensed run)
+SENS <- list(t10 = c(32, 30, 21, 13, 29, 23, 3), t20 = c(32, 30, 21, 13, 29, 23, 3), none = c(0, 31, 21, 14, 29, 23, 3))   # routing-threshold sensitivity (licensed run)
+## response-style composites (prespecified item list; common battery at both waves): ranges of d_std over the five designs;
+## the "v07" values are the composites of the v0.7 rule as run on the present universe (quoted in the text for the record)
+STYLE <- list(ext_range = c(-0.31, -0.22), mid_range = c(0.19, 0.21), n_rating = c(46, 46, 42), n_mid = 25, n_mid_all = 28, n_freq_added = 24,
+              n_v07_extra = c(40, 26),
+              v07_ext = c(-0.2553, -0.2102, -0.2081, -0.2280, -0.2295), v07_mid = c(0.2004, 0.2174, 0.2167, 0.2204, 0.2193),
+              v07_ext_range = c(-0.26, -0.21), v07_mid_range = c(0.20, 0.22),
               all_ext_range = c(-0.32, -0.23), all_mid_range = c(0.20, 0.23), rf_ext_range = c(-0.29, -0.22), bip_ext_range = c(-0.29, -0.21),
               bip_mid_range = c(0.15, 0.17), n_agree = 17, agree_ext_range = c(-0.28, -0.20), agree_mid_range = c(0.15, 0.17))
-MASS <- list(max_finite_item = "dq44_2l", supported_items = c("DQ08B_4", "DQ45A"), eligible = 419, zero_denom_items = 14, zero_denom_categories = 16,
-             not_reconcilable = c(1, 0, 1, 0), median_missing = 0.0177, named_feasible = c(1, 1, 1, 1),
-             finite_gt1 = 13, max_finite = 2.256, supported_gt1 = 2, sparse_only_gt1 = 11, max_supported = 1.192,
-             party_id = 1.955, zero_denom_routing = c("DQ49_2P", "DQ49_2Z"))
+MASS <- list(max_finite_item = "DQ09_D", supported_items = c("DQ08B_4", "DQ45A"), eligible = 410, zero_denom_items = 10, zero_denom_categories = 10,
+             zero_denom_subgroup = 9, not_reconcilable = c(0, 0, 0, 0), median_missing = 0.0177, max_needed = 0.0065, named_feasible = c(1, 1, 1, 1),
+             finite_gt1 = 8, max_finite = 1.369, supported_gt1 = 2, sparse_only_gt1 = 6, max_supported = 1.192,
+             zero_denom_routing = c("DQ49_2P", "DQ49_2Z"))
 
 res <- run_checks(RES0)
 
@@ -339,8 +387,12 @@ if (SELFTEST) {
   expect_fail("a quoted value set to missing (15_arms.csv, n_old_S)", csv_edit("15_arms.csv", function(x) x[dose_def == "exact", n_old_S := NA]))
   expect_fail("the style margins of one design removed (15_designs_items.csv)",
               csv_edit("15_designs_items.csv", function(x) x[!(family == "P_style" & estimator == "ssm")]))
-  expect_fail("a nominal item marked as entering the main style composite (15_style_items_audit.csv)",
-              csv_edit("15_style_items_audit.csv", function(x) x[toupper(var) == "DQ43", in_main := TRUE]))
+  expect_fail("a frequency scale marked as entering the main style composite (15_style_items_audit.csv)",
+              csv_edit("15_style_items_audit.csv", function(x) x[toupper(var) == "DQ07A", in_main := TRUE]))
+  expect_fail("a class-D column marked as in the main entry-wave analysis (15_ec_status.csv)",
+              csv_edit("15_ec_status.csv", function(x) x[ec_class == "D" & ec_ok == TRUE, ec_main := TRUE]))
+  expect_fail("a nominal indicator dropped from the universe (04_item_meta.csv)",
+              csv_edit("04_item_meta.csv", function(x) x[var == "DQ30__8", in_universe := FALSE]))
   expect_fail("the v0.7-rule rows of the style sensitivity file altered (15_style_sensitivity.csv)",
               csv_edit("15_style_sensitivity.csv", function(x) x[battery == "v07_asrun" & indicator == "ext" & estimator == "naive", d_std := d_std + 0.01]))
   expect_fail("another input named by 11_env.txt", function(d) {

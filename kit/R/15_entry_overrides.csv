@@ -1,3 +1,16 @@
 w5_var,w1_var,recode_w1,note
-DQ43,ZQ50,reverse12,w1 ZQ50 is coded 1=never married/2=married (reversed relative to w2+); recode to w5 coding
+DQ43,ZQ50,reverse12,w1 ZQ50 is coded 1=never married/2=married (reversed relative to w2+); recode to w5 coding; 3 and 4 as in w5
 DQ39,ZQ44,map:10=8;11=8,w1 ZQ44 has extra codes 10=group home and 11=community hall; fold into 8=other to match w5 DQ39 (8 categories)
+DQ03_9,ZQ05_2,,"weekly contracted hours; codes 1-8 identical (7 = not fixed is set to not applicable by 15_item_scale.csv, 8 = DK)"
+DQ44_3,ZQ55_3,,spouse job position; codes 1-7 identical (7 = other set to not applicable by 15_item_scale.csv)
+DQ44_5,ZQ55_5,,"spouse firm size; codes 1-8 identical (7 = public sector set to not applicable, 8 = DK)"
+DQ57A,ZQ02A,map:3=.,wake-time answer format; the w1 codebook carries a third code (3) that the 2007 questionnaire does not offer for A: set to missing
+DQ57D,ZQ02D,map:3=.,bed-time answer format; as DQ57A
+dq57a_hr,"ZQ02AX,ZQ02AY,ZQ02AZ",,"components (AM/PM, hour, minute) of the 2007 wake time; the derived item is built by the same rule at both waves"
+dq57b_hr,"ZQ02BX,ZQ02BY,ZQ02BZ",,components of the 2007 leave-home time
+dq57c_hr,"ZQ02CX,ZQ02CY,ZQ02CZ",,components of the 2007 return-home time (+24 when earlier than the leave-home time of the same person)
+dq57d_hr,"ZQ02DX,ZQ02DY,ZQ02DZ",,components of the 2007 bed time (0-11 h +24; 12 pm = 24)
+dq57d_hr_s12,"ZQ02DX,ZQ02DY,ZQ02DZ",,components of the 2007 bed time (sensitivity: 12 pm set to missing)
+dq54_1_months,"ZQ59_1Y,ZQ59_1M",,"components (years, months) of the 2007 duration of the relationship"
+DQ03_2,JC_2,map:10=8,"2007 JC_2 carries an after-code 10 = 農林 (agriculture/forestry) that the 2011 precoded list (1-8) does not have; folded into 8 = その他 (9 = わからない is a DK code). Checked against PM160_label.txt and the 2007/2011 questionnaires, 2026-09-29"
+DQ44_2,ZQ55_2,map:10=8,"spouse occupation; as DQ03_2 (2007 ZQ55_2 has 10 = 農林, 9 = わからない)"

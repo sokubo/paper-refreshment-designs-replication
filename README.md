@@ -18,8 +18,8 @@ Preprint: arXiv:XXXX.XXXXX (to be filled at posting). Author: Shoki Okubo (Toyo 
 release-check records (`RELEASE_CHECK*`), which are written after the manifest.
 
 ## Checked commit and release record
-Computational commit checked against the numerical results of the manuscript: `d516967f9065be73186a67438241e3a8c28db8e2` — see `RELEASE_CHECK.md`, `RELEASE_CHECK_run.log` (the console output of the clean-copy run) and `RELEASE_CHECK_sessionInfo.txt`. Later commits change only the manuscript (its source, PDF and any figure script under `manuscript/`), documentation and the release record — `git diff --stat d516967f9065be73186a67438241e3a8c28db8e2 HEAD` lists them — so the computational scripts and outputs are those of the checked commit; after any change to them the release check is rerun and this line is regenerated.
-Tag of the checked release: `paper-v0.9`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
+Computational commit checked against the numerical results of the manuscript: not yet checked for this version. The `RELEASE_CHECK*` files in this snapshot are the record of the previously checked commit `d516967f9065be73186a67438241e3a8c28db8e2`, whose scripts or outputs differ from these; the release check is rerun on this version before it is tagged, and this line is then regenerated.
+Tag of the checked release: `paper-v1.0`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
 Third-party reproduction: none. The release record is the author's own re-execution of the published snapshot in a clean copy.
 
 ## Data
@@ -41,7 +41,7 @@ Third-party reproduction: none. The release record is the author's own re-execut
   labels are Japanese, and in a non-UTF-8 locale `haven` writes them as `<U+XXXX>` escapes, which changes
   the bytes of the synthetic input without changing any value. Under a fixed UTF-8 locale the synthetic
   input regenerates byte-identically; its SHA-256 is
-  `760b722ad0728a80773003ff3b0cda6debf6bf1b497d3a1a78600cc493f75289`.
+  `9f6d67e3e63fa4e1ae85dc681a265410badcde6cecf488ec3349be0c27d2d445`.
 
 ## Execution order and runtimes (single core)
 

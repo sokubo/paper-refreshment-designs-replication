@@ -20,14 +20,14 @@ LTX  = os.path.join(HERE, 'latex')
 
 # --- the two footnotes on the title page -------------------------------------
 ARCHIVE_REPO = 'https://github.com/sokubo/paper-refreshment-designs-replication'
-ARCHIVE_TAG = 'paper-v0.9'
-ARCHIVE_COMMIT = 'd516967'          # filled in after the release check of the published snapshot
+ARCHIVE_TAG = 'paper-v1.0'
+ARCHIVE_COMMIT = 'COMMIT7'          # filled in after the release check of the published snapshot (paper-v0.9 was d516967)
 TITLE_THANKS = (
     r"\thanks{This research benefited from discussions and feedback during presentations at "
     r"the Institute of Social Science, University of Tokyo, the Japanese Association for Mathematical "
     r"Sociology, and the panel survey conference at Keio University, and from comments by Hiroshi Ishida, "
     r"Kazuo Yamaguchi, and Hiroki Takikawa. "
-    r"Code for every simulation and deterministic check in this paper is in the replication "
+    r"Code for all simulations and verification scripts in this paper is in the replication "
     r"archive at \url{%s} (fixed version: tag \texttt{%s}, commit \texttt{%s}). The empirical "
     r"illustration uses licensed JLPS microdata, which are not redistributed; the archive contains the "
     r"code that produces the reported aggregates and a synthetic example (see Data and code availability). "
@@ -37,7 +37,7 @@ AUTHOR_THANKS = (
     r"\thanks{Department of Sociology, Toyo University, Tokyo, Japan. "
     r"Email: okubo080@toyo.jp. Website: sokubo.github.io.}"
 )
-DATE = 'September 25, 2026'
+DATE = 'September 29, 2026'
 KEYWORDS = (r"\noindent\textbf{Keywords:} attrition; panel conditioning; partial identification; "
             r"refreshment samples; rotation panels; survey design")
 # -----------------------------------------------------------------------------
@@ -107,6 +107,15 @@ def _float_table(tex, label):
 for _lab in FLOAT_TABLES:
     tex = _float_table(tex, _lab)
 print('long tables set as floats:', sum(('\\label{%s}\n\\begin{tabular}' % l) in tex for l in FLOAT_TABLES))
+
+# the table of prior restrictions (tbl-prior) has four text columns and must break across pages; keep it a
+# longtable but set it in a smaller size at single spacing so that a row is not spread over a page
+_lab = tex.find('\\label{tbl-prior}')
+if _lab >= 0:
+    _b = tex.rfind('\\begin{longtable}', 0, _lab)
+    _e = tex.find('\\end{longtable}', _lab) + len('\\end{longtable}')
+    tex = tex[:_b] + '\\begingroup\\footnotesize\\setstretch{1.05}\n' + tex[_b:_e] + '\n\\endgroup' + tex[_e:]
+    print('tbl-prior set in footnotesize at single spacing')
 
 # visible Keywords line after the abstract (house format)
 if r'\textbf{Keywords:}' not in tex:

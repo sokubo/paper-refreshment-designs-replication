@@ -40,4 +40,51 @@
 "DQ139","w5問39_労働時間39","continuous",0,0,0,FALSE,FALSE,0.972,0.956
 "DQ140","w5問40_労働時間40","continuous",0,0,0,FALSE,FALSE,0.97,0.977
 "DQ02","w5_就業","binary",2,0,0,FALSE,FALSE,1,1
-"DQ43","w5問43_婚姻","binary",2,0,0,FALSE,FALSE,1,1
+"DQ43__1","w5問43_婚姻: 既婚","binary",2,0,0,FALSE,FALSE,1,1
+"DQ43__2","w5問43_婚姻: 未婚","binary",2,0,0,FALSE,FALSE,0,0
+"DQ15","w5問15_喫煙","ordinal",4,0,0,FALSE,FALSE,1,1
+"DQ30__1","w5問30_支持政党: 自民党","binary",2,1,0,FALSE,FALSE,1,1
+"DQ30__2","w5問30_支持政党: 民主党","binary",2,1,0,FALSE,FALSE,0,0
+"DQ30__3","w5問30_支持政党: 公明党","binary",2,1,0,FALSE,FALSE,0,0
+"DQ30__4","w5問30_支持政党: 共産党","binary",2,1,0,FALSE,FALSE,0,0
+"DQ30__5","w5問30_支持政党: 社民党","binary",2,1,0,FALSE,FALSE,0,0
+"DQ30__6","w5問30_支持政党: 国民新党","binary",2,1,0,FALSE,FALSE,0,0
+"DQ30__8","w5問30_支持政党: その他の政党","binary",2,1,0,FALSE,FALSE,0,0
+"DQ30__9","w5問30_支持政党: 特に支持する政党はない","binary",2,1,0,FALSE,FALSE,0,0
+"DQ03_1__1","w5問3(1)_現職・働き方: 経営者、役員","binary",2,0,0,FALSE,FALSE,0.507,0.504
+"DQ03_1__2","w5問3(1)_現職・働き方: 正社員・正職員","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_1__3","w5問3(1)_現職・働き方: パート・アルバイト・契約・臨時・嘱託","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_1__4","w5問3(1)_現職・働き方: 派遣社員","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_1__5","w5問3(1)_現職・働き方: 請負社員","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_1__6","w5問3(1)_現職・働き方: 自営業主、自由業者","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_1__7","w5問3(1)_現職・働き方: 家族従業者","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_1__8","w5問3(1)_現職・働き方: 内職","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_1__9","w5問3(1)_現職・働き方: その他","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_2__1","w5問3(2)_現職・職業―大分類(プリコード): 専門職・技術職","binary",2,0,0,FALSE,FALSE,0.507,0.506
+"DQ03_2__2","w5問3(2)_現職・職業―大分類(プリコード): 管理職","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_2__3","w5問3(2)_現職・職業―大分類(プリコード): 事務職","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_2__4","w5問3(2)_現職・職業―大分類(プリコード): 販売職","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_2__5","w5問3(2)_現職・職業―大分類(プリコード): サービス職","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_2__6","w5問3(2)_現職・職業―大分類(プリコード): 生産現場職・技能職","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_2__7","w5問3(2)_現職・職業―大分類(プリコード): 運輸・保安職","binary",2,0,0,FALSE,FALSE,0,0
+"DQ03_2__8","w5問3(2)_現職・職業―大分類(プリコード): その他","binary",2,0,0,FALSE,FALSE,0,0
+"DQ42_A","w5問42_健康保険―A","binary",2,0,0,FALSE,FALSE,0.898,0.895
+"DQ42_B","w5問42_健康保険―B","binary",2,0,0,FALSE,FALSE,0.898,0.895
+"DQ57A","w5問57A_起床_時刻の回答形式","binary",2,0,0,FALSE,FALSE,1,1
+"DQ57B__1","w5問57B_家を出る_時刻の回答形式: だいたい午前／午後×時○分ころ","binary",2,0,0,FALSE,FALSE,1,1
+"DQ57B__2","w5問57B_家を出る_時刻の回答形式: 特に決まっていない","binary",2,0,0,FALSE,FALSE,0,0
+"DQ57B__3","w5問57B_家を出る_時刻の回答形式: 主に家にいる","binary",2,0,0,FALSE,FALSE,0,0
+"DQ57C__1","w5問57C_帰宅_時刻の回答形式: だいたい午前／午後×時○分ころ","binary",2,0,0,FALSE,FALSE,1,1
+"DQ57C__2","w5問57C_帰宅_時刻の回答形式: 特に決まっていない","binary",2,0,0,FALSE,FALSE,0,0
+"DQ57C__3","w5問57C_帰宅_時刻の回答形式: 主に家にいる","binary",2,0,0,FALSE,FALSE,0,0
+"DQ57D","w5問57D_就寝_時刻の回答形式","binary",2,0,0,FALSE,FALSE,1,1
+"DQ03_5E","w5問3(5)-5_収入の形態―年俸","binary",2,0,0,FALSE,FALSE,1,1
+"DQ03_5ES","w5問3(5)-5_収入の金額―年俸","continuous",0,0,0,FALSE,FALSE,0.256,0.255
+"DQ03_13","w5問3(13)_現在の会社で当面仕事を続けるか","ordinal",3,1,0,FALSE,FALSE,0.501,0.496
+"DQ17A","w5問17A_中3時の父親の喫煙","ordinal",3,0,0,FALSE,FALSE,0.955,0.947
+"dq57a_hr","起床時刻(時; 分を含む)","continuous",0,0,0,FALSE,FALSE,0.892,0.895
+"dq57b_hr","家を出る時刻(時)","continuous",0,0,0,FALSE,FALSE,0.797,0.79
+"dq57c_hr","帰宅時刻(時; 家を出る時刻より前なら +24)","continuous",0,0,0,FALSE,FALSE,0.79,0.794
+"dq57d_hr","就寝時刻(時; 0-11 時は +24, 午後12時は 24)","continuous",0,0,0,FALSE,FALSE,0.892,0.881
+"dq57d_hr_s12","就寝時刻(感度: 午後12時を欠損に)","continuous",0,0,0,FALSE,FALSE,0.892,0.881
+"dq54_1_months","交際期間(月数 = 年×12 + 月)","continuous",0,0,0,FALSE,FALSE,0.399,0.42

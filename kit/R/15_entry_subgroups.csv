@@ -1,0 +1,6 @@
+subgroup,w1_var,codes,note
+employed2007,ZQ03,1,"working at the 2007 entry interview (問3 = 1); 2011 asks the job block of current workers only, 2007 also of the last job"
+employee2007,JC_1,2;3;4;5;12,"employees at 2007: JC_1 = 2 正社員・正職員, 3 パート・アルバイト・契約・臨時・嘱託, 4 派遣社員, 5 請負社員, 12 学生(現在非正規で働いている) (codes verified against the provider's label file PM160_label.txt, 2026-09-29; 12 is the provider's split of working students out of 3). 2011 asks 問3(14)-(16) of those employed by a company (会社などに雇われている方のみ), 2007 asked 問5 of everyone with a current or last job"
+married2007,ZQ50,2,"married at 2007 (問50 = 2, 既婚（配偶者あり）); 2007 asked the divorced and widowed about the former spouse"
+partner2007,ZQ58,1;2,"fiance(e) or steady partner at 2007 (問58 = 1, 2); 2007 also asked about the last partner"
+parent2007,ZQ14_3,1,has a child at 2007 (問14(3) = 1); 2011 asks everyone whether they want a(nother) child
