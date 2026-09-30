@@ -20,10 +20,13 @@
 #   親設問の w1 変数から同じコードの指標を作り、派生項目(時刻・交際期間)は w1 の構成要素から同じ規則で作る。区分 C の項目は
 #   入所波の差 δ を 2007 年の該当者(15_entry_subgroups.csv)の中で計算する。区分 D の項目(と区分のない項目)は EC の主分析
 #   (件数)から外し、感度(15_ec_scope_sensitivity.csv)にだけ入れる。
-#   v1.1 (2026-09-29; 第 7 ラウンド): (M2) 質量診断の到達(reach)を名義設問の指標間で共有する(15_mass_ratio.R の
-#   mass_diagnostic_columns(); 以前は最初の指標しか評価されなかった)。(M3) 区分 C の項目の入所波の項は、2007 年の該当者の中の
+#   v1.1 (2026-09-29): 質量診断の到達(reach)を名義設問の指標間で共有する(15_mass_ratio.R の
+#   mass_diagnostic_columns(); 以前は最初の指標しか評価されなかった)。区分 C の項目の入所波の項は、2007 年の該当者の中の
 #   「比較波に回答した生存者」の差なので、比較波の(現在の該当者の中の)選抜の差と等しいという橋渡しの仮定が要る。A+B だけの
 #   scope を 15_ec_scope_sensitivity.csv に加え(BH は A+B 内で再計算、T_NS の棄却数つき)、項目別に 15_ec_ab_items.csv を書く。
+#   v1.2 (2026-09-30): EC-adj の入所波の選抜項を、新規の予測と同じく T(比較波に実質回答した生存者)の共変量分布の上で平均する
+#   (panelcond 0.1.6 と同じ定義; 以前は P = T ∩ {入所波の回答あり} の上で平均していたので、P ≠ T のとき 2 つの共変量分布が
+#   混ざっていた)。単体テスト R/15_test_ec_adj.R がエンジンを取り出して 3 つの人工母集団で確かめる。
 # 出力(すべて集計値、N<10 抑制): 15_designs_items.csv / 15_tests_items.csv / 15_detection_counts.csv /
 #   15_diagnostics_summary.csv / 15_mass_diagnostic_summary.csv / 15_mass_diagnostic_flags.csv / 15_routing_sensitivity.csv /
 #   15_style_sensitivity.csv / 15_style_items_audit.csv / 15_core32.csv /
@@ -40,6 +43,9 @@ source(file.path(.here, "00_config.R"))
 source(file.path(.here, "00_utils_disclosure.R"))
 source(file.path(.here, "15_mass_ratio.R"))          # mass-domination helper (tested by 15_test_mass_ratio.R)
 suppressMessages({library(haven); library(data.table); library(panelcond)})
+if (packageVersion("panelcond") < "0.1.6")
+  stop("panelcond 0.1.6 or later is required (the covariate-standardised entry-wave correction changed in 0.1.6; installed: ",
+       as.character(packageVersion("panelcond")), "). Install with remotes::install_github(\"sokubo/panelcond@v0.1.6\").")
 source(file.path(.here, "15_style_items.R"))         # response-style composites over the fixed item list
 source(file.path(.here, "15_item_scale.R"))          # the item specification table and its helpers (shared with 04)
 
@@ -366,20 +372,24 @@ main <- function() {
     delta <- colMeans(ES, na.rm = TRUE) - colMeans(eo, na.rm = TRUE)
     delta[colSums(!is.na(ES)) == 0] <- NA
     ec <- (m_oS - delta) - m_n
-    ## EC-adj(回帰標準化; pc_point の ols_pred と同じ)
+    ## EC-adj(回帰標準化; panelcond 0.1.6 の pc_point と同じ定義)。生存者のうち比較波に実質回答した集合 T(IO)の
+    ## 共変量分布の上で 3 つの回帰予測を平均する: 新規の予測 m_F、入所波の選抜項 m_P - m_E(m_P は入所波に回答した
+    ## 生存者 P = T ∩ {入所波の回答あり} で、m_E は入所波に回答した全入所者 E で当てはめる)。kit v1.1 までは入所波の
+    ## 残差を P の上で、新規の予測を T の上で平均していた(P ≠ T のとき、すなわち入所波の項目無回答や区分 C の 2007 の
+    ## 該当者の違いがあるとき、共変量分布が 2 つになり、x ごとの選抜項が等しくても偏りが残る; 人工例で 1/12)。
     ec_adj <- setNames(rep(NA_real_, JJ), cols)
     if (adj) {
       Xo_b <- cbind(1, as.matrix(Xo[ic, , drop = FALSE])); Xn_b <- cbind(1, as.matrix(Xn[jf, , drop = FALSE]))
       for (j in which(ec_ok_col)) {
         e_j <- eo[, j]; ok_e <- !is.na(e_j); ip <- IO[, j] & ok_e
-        if (sum(ok_e) <= ncol(Xo_b) || !any(ip)) next
+        if (sum(ok_e) <= ncol(Xo_b) || sum(ip) <= ncol(Xo_b)) next
+        XT <- Xo_b[IO[, j], , drop = FALSE]
         b1 <- stats::lm.fit(Xo_b[ok_e, , drop = FALSE], e_j[ok_e])$coefficients; b1[is.na(b1)] <- 0
-        m_c <- mean(Xo_b[ip, , drop = FALSE] %*% b1)
+        bp <- stats::lm.fit(Xo_b[ip, , drop = FALSE], e_j[ip])$coefficients; bp[is.na(bp)] <- 0
         y_j <- yn[, j]; ok_y <- !is.na(y_j)
         if (sum(ok_y) <= ncol(Xn_b) || !any(IO[, j])) next
         b0 <- stats::lm.fit(Xn_b[ok_y, , drop = FALSE], y_j[ok_y])$coefficients; b0[is.na(b0)] <- 0
-        m_0 <- mean(Xo_b[IO[, j], , drop = FALSE] %*% b0)
-        ec_adj[j] <- m_oS[j] - (mean(e_j[ip]) - m_c) - m_0
+        ec_adj[j] <- m_oS[j] - mean(XT %*% (bp - b1)) - mean(XT %*% b0)
       }
     }
     list(naive = naive, sm = sm, ssm = ssm, ec = ec, ec_adj = ec_adj, delta = delta, d1 = sm - ec, d2 = ssm - sm,

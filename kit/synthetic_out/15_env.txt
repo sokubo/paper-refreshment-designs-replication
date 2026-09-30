@@ -1,15 +1,15 @@
-time: 2026-09-29 05:52:48
+time: 2026-09-30 14:57:49
 input: SYNTH_ZQ100AQ100BQ100CQ100DQ100EQ100FQ100GQ100HQ100IQ100.dta
 input size: 8991394
-input mtime: 2026-09-29 05:44:32
+input mtime: 2026-09-30 14:56:22
 input md5: f4469908e092f38fd820fe87bdedf5a9
 input sha256: 9f6d67e3e63fa4e1ae85dc681a265410badcde6cecf488ec3349be0c27d2d445
-derived: /tmp/p1synth/derived_me/analysis_w5.rds 2026-09-29 05:51:45
+derived: /tmp/p1synth/derived_me/analysis_w5.rds 2026-09-30 14:56:28
 varmap: /tmp/p1synth/varmap_synthetic.csv
 style items: style_items_synthetic.csv md5: 24c653a7d506659786b3a51d1c182fbe
 item scale: item_scale_synthetic.csv md5: c7d98a4835c119db82cc7536c6bd8951
 B: 50 seed: 20260915 dose: exact,any
-panelcond: 0.1.4
+panelcond: 0.1.6
 
 R version 4.3.3 (2024-02-29)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -32,7 +32,7 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] panelcond_0.1.4    data.table_1.14.10 haven_2.5.4       
+[1] panelcond_0.1.6    data.table_1.14.10 haven_2.5.4       
 
 loaded via a namespace (and not attached):
  [1] R6_2.5.1        utf8_1.2.4      tzdb_0.4.0      magrittr_2.0.3 

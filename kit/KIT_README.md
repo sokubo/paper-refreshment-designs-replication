@@ -34,6 +34,7 @@ export P1_PROJECT_DIR=<this archive's kit/ directory>
 export P1_INPUT_DTA=<file name of the integrated .dta inside $P1_DATA_DIR/raw>   # one named input
 Rscript R/15_test_mass_ratio.R         # unit test of the mass-domination helper (no data read)
 Rscript R/15_test_style_items.R        # unit test of the response-style helpers (no data read)
+Rscript R/15_test_ec_adj.R             # unit test of the entry-wave corrections in the bootstrap engine (no data read)
 # R/15_style_items.csv lists the rating-scale items of the response-style composites (read by 04 and 15; see §3b)
 # R/15_item_scale.csv declares the scale, special codes, recodes, indicators, derived items and entry-wave class of
 #   every wave-5 item; R/15_entry_overrides.csv and R/15_entry_subgroups.csv the 2007 counterparts and subgroups (§3c)
@@ -55,11 +56,12 @@ fingerprint, the row positions and cohorts of the wave-5 risk set, and the respo
 checker requires the three run records to name one and the same file with the SHA-256 given in §5.
 
 Requires R (≥ 4.3) with `haven`, `data.table`, and `panelcond`
-(`remotes::install_github("sokubo/panelcond@v0.1.4")`). The reported design run used 0.1.2; every
-standard error and diagnostic quoted in Section 10 comes from the joint person bootstrap of
-`15_panelcond_designs.R`, which recomputes every arm and every group share in each replicate, so the
-correction of the analytic entry-wave and diagnostic variances in 0.1.4 (they now include the
-estimated shares) does not change any quoted number. The design run takes about 13 minutes with 500
+(`remotes::install_github("sokubo/panelcond@v0.1.6")`; 0.1.6 or later). Version 0.1.6 changes the
+covariate-standardised entry-wave correction (§3c), so the `ec_adj` rows depend on the package version; the
+design run behind manuscript v1.2 used 0.1.6 (recorded in `15_env.txt`; the checker requires it). Every standard error
+and diagnostic quoted in Section 10 comes from the joint person bootstrap of `15_panelcond_designs.R`, which
+recomputes every arm and every group share in each replicate, so the correction of the analytic entry-wave and
+diagnostic variances in 0.1.4 (they now include the estimated shares) does not change any quoted number. The design run takes about 13 minutes with 500
 bootstrap replications over two dose definitions; `11b` takes a few minutes with 2,000 replications.
 
 `11_negcontrol_w13.R` and `11b_negcontrol_w13_boot.R` read an item map,
@@ -95,7 +97,8 @@ files in its own folder (`R/`). Both `P1_DATA_DIR` and `P1_PROJECT_DIR` must be 
 has no default location and stops with a message if either is missing. `15_make_synthetic.R` fixes the
 date stamp that `haven::write_dta()` writes into the Stata header (otherwise the current time), so the
 regenerated input has the SHA-256 given in the archive README. The expected outputs in `synthetic_out/`
-were produced with panelcond 0.1.4. With 0.1.2 or 0.1.3 the analytic columns differ (`se_analytic` of
+were produced with panelcond 0.1.6. With 0.1.5 or earlier the `ec_adj` rows differ for items whose survivors
+lack entry answers or whose 2007 eligibility differs (§3c); with 0.1.2 or 0.1.3 the analytic columns differ as well (`se_analytic` of
 the entry-wave arms in `15_designs_items.csv`; `T1_stat`, `T1_p`, `T2_stat`, `T2_p` in
 `15_tests_items.csv`) because those versions omitted the share terms; every bootstrap column and every
 summary file is identical, and no quoted number uses an analytic column.
@@ -124,30 +127,31 @@ item specification table, so the public pipeline needs nothing from outside this
 
 ## 3. Where each number in Section 10 comes from
 
-*The table below describes the run behind manuscript v1.1 (the licensed run of 29 September 2026 with kit v1.1: the
-item specification table of §3c, the mass diagnostic assessing every nominal indicator, and the A+B entry-wave scope;
-scripts `15` and `15b` were repeated on the derived file of the v1.0 run of the same day, whose `04` outputs are
-unchanged). The run behind versions 0.5 to 0.10 (24 September 2026) used the inferred universe of 478 items; its
+*The table below describes the run behind manuscript v1.2 (the licensed run of 1 October 2026 JST, 30 September UTC,
+with kit v1.2 and `panelcond` 0.1.6: the item specification table of §3c, the mass diagnostic assessing every nominal
+indicator, the A+B entry-wave scope, and the covariate-standardised entry-wave correction with both regression terms
+integrated over the survivors' covariates; scripts `15` and `15b` were repeated on the derived file of the v1.0 run of
+29 September 2026, whose `04` outputs are unchanged). The run behind versions 0.5 to 0.10 (24 September 2026) used the inferred universe of 478 items; its
 counts are no longer quoted.*
 
 `check_manuscript_values_T2.R` performs every comparison below and prints the result. It requires all
 twenty-three aggregate files and run records listed at its top (a missing file stops it), requires every key
 to identify exactly one row, first checks that the run records of scripts 15, 11 and 11b name the
 same input file with the SHA-256 given in §5, and checks that the run record of 15 carries the MD5 of the item
-specification table shipped in `R/`. On 29 September 2026 (JST) it reproduced all 157 quantities from the aggregate outputs of the licensed run with kit v1.1, and its self-test detected all fifteen corruptions.
+specification table shipped in `R/`. On 1 October 2026 (JST) it reproduced all 158 quantities from the aggregate outputs of the licensed run with kit v1.2, and its self-test detected all seventeen corruptions; it also requires the run record to name `panelcond` 0.1.6 or later.
 
 | Quantity in Section 10 | Output file | Column |
 |---|---|---|
 | 2,797 continuing survivors; 963 entrants; 574 and 540 survivors | `15_arms.csv` | `n_old_S`, `n_new_total`, `n_new_sm`, `n_new_sm1` |
 | 500 bootstrap replications | `15_arms.csv` | `B` |
 | the item universe: 540 wave-5 variables in the table, 53 excluded, 15 nominal questions, 6 derived items; 523 columns = 284 binary + 102 ordered + 41 continuous items + 90 indicators + 6 derived items; no variable outside the table | `R/15_item_scale.csv` (its MD5 in `15_env.txt`); `04_item_meta.csv`; `04_items_unlisted.csv` | `scale`, `construct`; `in_universe`, `spec_scale`, `construct`, `qgroup`; the unlisted file is empty |
-| 320 columns with an entry-wave counterpart; 269 in the main entry-wave analysis (classes A, B, C); 16 of the 320 routing-flagged and 35 class D; in the counts 181 (A + B) + 87 (C) = 268, the 35 class-D columns outside them; admitting class D raises the two entry-wave counts by two each (29 → 31, 23 → 25); the 2007 subgroups of class C | `15_arms.csv`; `15_ec_status.csv`; `15_ec_counts_by_class.csv`; `15_ec_scope_sensitivity.csv` | `n_ec_items`, `n_ec_items_main`; `ec_ok`, `ec_class`, `ec_main`, `ec_subgroup`; `n_items` by `cls`; `n_affected` by `scope` |
-| the A+B scope (§3c, the class-C bridge): over the 181 columns of classes A and B alone, with the Benjamini–Hochberg families recomputed within them, the entry-wave correction flags 28 and its standardised version 19 (the class-C columns contribute 5 and 4 of the 29 and 23 of the main analysis); $\mathcal{T}_{\mathrm{NS}}$ rejects for 24 of the 181 (13.3%) against 39 of 268 (14.6%) | `15_ec_scope_sensitivity.csv`; `15_ec_counts_by_class.csv`; `15_ec_ab_items.csv` | scope `A+B (same question at entry)`: `n_items`, `n_affected`, `n_T1_tests`, `n_T1_reject`; `n_affected_ab_q` by `cls`; per item `q_main`, `q_ab`, `class3_main`, `class3_ab` |
+| 320 columns with an entry-wave counterpart; 269 in the main entry-wave analysis (classes A, B, C); 16 of the 320 routing-flagged and 35 class D; in the counts 181 (A + B) + 87 (C) = 268, the 35 class-D columns outside them; admitting class D raises the two entry-wave counts by two each (29 → 31, 22 → 24); the 2007 subgroups of class C | `15_arms.csv`; `15_ec_status.csv`; `15_ec_counts_by_class.csv`; `15_ec_scope_sensitivity.csv` | `n_ec_items`, `n_ec_items_main`; `ec_ok`, `ec_class`, `ec_main`, `ec_subgroup`; `n_items` by `cls`; `n_affected` by `scope` |
+| the A+B scope (§3c, the class-C bridge): over the 181 columns of classes A and B alone, with the Benjamini–Hochberg families recomputed within them, the entry-wave correction flags 28 and its standardised version 19 (the class-C columns contribute 5 and 3 of the 29 and 22 of the main analysis); $\mathcal{T}_{\mathrm{NS}}$ rejects for 24 of the 181 (13.3%) against 39 of 268 (14.6%) | `15_ec_scope_sensitivity.csv`; `15_ec_counts_by_class.csv`; `15_ec_ab_items.csv` | scope `A+B (same question at entry)`: `n_items`, `n_affected`, `n_T1_tests`, `n_T1_reject`; `n_affected_ab_q` by `cls`; per item `q_main`, `q_ab`, `class3_main`, `class3_ab` |
 | 33 columns outside every count: 31 flagged as potentially incomparable because of differential item nonresponse or routing (04's flag: item-nonresponse gap above 15 points), one follow-up of a flagged question (DQ46Y), and one sensitivity variant (`dq57d_hr_s12`, `in_counts = FALSE`). The flag is a screening rule; the questionnaire filters have not been verified | `15_designs_items.csv` | `exclude_flag` (= not `in_counts`), `nr_routing_flag`, `routing_followup`, `count_exclude` (= any of the three, or, for `ec` and `ec_adj`, outside the main entry-wave analysis) |
-| the same counts with the flag recomputed at gap thresholds of 10 and 20 points (identical flagged set and counts) and with no routing exclusion (522 columns; 31 / 21 / 14 / 29 / 23; the same three items flagged by all five designs) | `15_routing_sensitivity.csv` | one row per threshold: `n_routing`, `n_followup`, `n_items_*`, `aff_*`, `common_*`, `n_all5`, `all5_items`; `n_disagree_with_04` (= 0: the gap recomputed in 15 at .15 reproduces 04's flag) |
+| the same counts with the flag recomputed at gap thresholds of 10 and 20 points (identical flagged set and counts) and with no routing exclusion (522 columns; 31 / 21 / 14 / 29 / 22; the same three items flagged by all five designs) | `15_routing_sensitivity.csv` | one row per threshold: `n_routing`, `n_followup`, `n_items_*`, `aff_*`, `common_*`, `n_all5`, `all5_items`; `n_disagree_with_04` (= 0: the gap recomputed in 15 at .15 reproduces 04's flag) |
 | 490 columns for which a mean contrast is meaningful; 489 for the matched designs (one item without variation in the matched arms); 268 in the entry-wave counts | `15_detection_counts.csv` | `n_items` by `estimator` |
-| flagged 30 / 21 / 13 / 29 / 23 | `15_detection_counts.csv` | `n_affected` by `estimator` |
-| flagged 18 / 16 / 9 / 29 / 23 on the common set of 268 | `15_designs_items.csv` | `class3 == "affected"`, restricted to columns with an `ec` row that enter the counts |
+| flagged 30 / 21 / 13 / 29 / 22 | `15_detection_counts.csv` | `n_affected` by `estimator` |
+| flagged 18 / 16 / 9 / 29 / 22 on the common set of 268 | `15_designs_items.csv` | `class3 == "affected"`, restricted to columns with an `ec` row that enter the counts |
 | three items flagged by all five designs (subjective social position, owner-occupancy of a detached house, anxiety about married life as a reason for remaining single) | `15_designs_items.csv` | intersection over `estimator` (DQ26, DQ39__1, DQ55_Q) |
 | diagnostic rejections: 39 of 268 (14.6%) and 43 of 489 (8.8%) | `15_diagnostics_summary.csv` | `n_T1_reject`/`n_T1_tests`, `n_T2_reject`/`n_T2_tests`, `share_T1_p05`, `share_T2_p05`, family `A_substantive` |
 | 73 of 409 (17.8%) for item nonresponse; 50 of the 73 from the grids DQ58C, DQ04(3), DQ09 and DQ08D | `15_diagnostics_summary.csv`; `15_tests_items.csv` | `n_T2_reject`/`n_T2_tests`, `share_T2_p05`, family `B_itemnonresp`; `T2_p_boot < .05` by variable |
@@ -272,27 +276,59 @@ of class-D items and of items without a class are computed and written but stay 
 "excluded (entry-wave class D)"`), and `15_ec_scope_sensitivity.csv` gives the counts with and without them
 (`15_ec_counts_by_class.csv` by class). For class-C items the entry-wave term is computed within the 2007 subgroup
 named in `ec_subgroup` and defined in **`R/15_entry_subgroups.csv`** (workers, employees, the married, respondents
-with a partner, parents at 2007), so that the restriction B4 of the paper is a restriction on that subgroup.
+with a partner, parents at 2007); the restriction this needs is stated below (the class-C bridge), and it is not the
+restriction B4 of the paper within one fixed population.
 **`R/15_entry_overrides.csv`** names the 2007 counterpart where the provider's map has none or the codes differ
 (a recode of the 2007 codes, or the 2007 components of a derived item), and the same recodes and special codes of
 the table are applied to the 2007 variable before its label set is compared with the 2011 one; `15_ec_status.csv`
 lists every universe item with its counterpart, class and subgroup, and `15_ec_unavailable.csv` the reason where no
 entry-wave term exists. The former `R/15_item_exclude.csv` is superseded by `in_counts`.
 
-**The class-C bridge (kit v1.1, 29 September 2026).** For a class-C item the entry-wave
-term is the selection difference within the 2007 subgroup $G_e$ among survivors who also give a substantive answer at
-the comparison wave, $\mathbb{E}[Y_e \mid S, R_t, G_e] - \mathbb{E}[Y_e \mid G_e]$ (the survivor means of every item are
-those of survivors with a substantive answer at $t$), whereas the bias that the correction removes from the
-comparison-wave contrast is the selection difference within the current subgroup $G_t$,
-$\mathbb{E}[Y^{*}_t \mid S, R_t, G_t] - \mathbb{E}[Y^{*}_t \mid G_t]$. The correction identifies the survivors' mean shift
-only if the two differences are equal, a transport of the selection bias across two subgroups whose memberships
-differ (a person who marries between the waves contributes to the second mean and not to the first); B4 within one
-fixed population does not imply it, and matching wording and coding do not establish it. The main analysis keeps the
-class-C items under that stated restriction, and `15_ec_scope_sensitivity.csv` now carries a third scope, `A+B (same
-question at entry)`, with the Benjamini--Hochberg families recomputed within classes A and B alone (`n_affected`,
-`n_equivalent`) and the $\mathcal{T}_{\mathrm{NS}}$ rejections counted within each scope (`n_T1_tests`, `n_T1_reject`);
-`15_ec_ab_items.csv` lists, item by item, the status under the main family and under the A+B family, and
-`15_ec_counts_by_class.csv` adds `n_affected_ab_q`.
+**The entry-wave corrections as implemented: respondent sets and restrictions (kit v1.2, 30 September 2026).**
+Four sets of respondents enter the two entry-wave corrections. $T$ is the survivors with a substantive answer at
+the comparison wave $t$ (the continuing cohort's arm of every design; for an item asked only of a subgroup its
+members are eligible at $t$ by construction). $E$ is every entrant of the continuing cohort with a substantive
+entry answer, within the 2007 subgroup $G_e$ of a class-C item and among everyone otherwise. $P = T \cap E$ is the
+survivors of $T$ who also have a substantive entry answer (for class C, who were also eligible at entry). $F$ is
+the fresh entrants with a substantive answer at their first wave. The unadjusted correction (`ec`) is
+$$\bar Y_T \;-\; (\bar Y^{e}_P - \bar Y^{e}_E) \;-\; \bar Y^{*}_F,$$
+with $\bar Y^{e}$ the mean entry answer. Its target is the survivors' mean shift $h^{T} = \mathbb{E}[Y_t - Y^{*}_t \mid T]$,
+and it equals that target exactly when
+$$\mathbb{E}[Y^{*}_t \mid T] - \mathbb{E}[Y^{*}_t \mid F] \;=\; \mathbb{E}[Y_e \mid P] - \mathbb{E}[Y_e \mid E],$$
+which decomposes into (i) representative item completion, $\mathbb{E}[Y^{*}_t \mid F] = \mathbb{E}[Y^{*}_t \mid G_t]$ for the
+fresh answerers and $\mathbb{E}[Y_e \mid E] = \mathbb{E}[Y_e \mid G_e]$, $\mathbb{E}[Y_e \mid P] = \mathbb{E}[Y_e \mid T \cap G_e]$ for
+the entry answerers, and (ii) the bridge $\mathbb{E}[Y^{*}_t \mid T] - \mathbb{E}[Y^{*}_t \mid G_t] = \mathbb{E}[Y_e \mid T \cap G_e] - \mathbb{E}[Y_e \mid G_e]$.
+For classes A and B, $G_e = G_t$ is the whole cohort (or the same subgroup at both waves) and (ii) is B4 of the paper
+with the response indicator in the conditioning set; for class C the two subgroups differ (a person who marries
+between the waves belongs to $G_t$ and not to $G_e$), and (ii) is a transport of the selection bias across them,
+which B4 within one fixed population does not imply and which matching wording and coding do not establish (an
+artificial population in which eligibility at $t$ is the outcome itself gives $-.5$ with no conditioning). Neither
+(i) nor (ii) is removable by the refreshment sample alone; `R/15_test_ec_adj.R` runs two artificial populations in
+which item completion at entry or in the fresh cohort depends on the answer, giving $-1/2$ and $+1/6$ with no
+conditioning for both corrections.
+
+The covariate-standardised correction (`ec_adj`; `panelcond` 0.1.6, `pc_point()`) fits three least-squares
+regressions of the item on the entry covariates (sex, centred birth year, education with a missing indicator):
+$m_P$ of the entry answer on $P$, $m_E$ of the entry answer on $E$, and $m_F$ of the fresh answer on $F$. It is
+$$\bar Y_T \;-\; \overline{(m_P - m_E)}_T \;-\; \overline{m_F}_T,$$
+every average being taken over the covariate distribution of $T$: the unadjusted correction with the entry-wave
+selection term and the fresh mean replaced by regression predictions integrated over one population. It equals
+$h^{T}$ when the two conditions above hold within every covariate value (the conditional bridge
+$\delta_e(t \mid x) = \delta_e(e \mid x)$ of the paper, with the response indicators in the conditioning sets, and
+representative completion within covariate values) and the three regressions are correctly specified; with linear
+projections the statement holds for the projections averaged over $T$. For covariate values of $T$ outside those of
+$P$ the entry fit is extrapolated linearly, which for class-C items is the case of survivors who were not eligible
+at entry. Kit v1.1 and `panelcond` 0.1.5 averaged the entry residual $\bar Y^{e}_P - \overline{m_E}_P$ over $P$ and the
+fresh prediction over $T$, two covariate distributions whenever $P \ne T$ (survivors without an entry answer; every
+class-C item); under that rule equal conditional selection terms do not give a zero bias (`R/15_test_ec_adj.R`: a
+sixteen-type population with no conditioning, equal selection terms within each covariate value and an exact raw
+correction gives $1/12$; one covariate distribution gives $0$). The two rules coincide whenever $P = T$. The main
+analysis keeps the class-C items under the stated bridge, and `15_ec_scope_sensitivity.csv` carries a third scope,
+`A+B (same question at entry)`, with the Benjamini--Hochberg families recomputed within classes A and B alone
+(`n_affected`, `n_equivalent`) and the $\mathcal{T}_{\mathrm{NS}}$ rejections counted within each scope (`n_T1_tests`,
+`n_T1_reject`); `15_ec_ab_items.csv` lists, item by item, the status under the main family and under the A+B
+family, and `15_ec_counts_by_class.csv` adds `n_affected_ab_q`. The A+B scope removes the cross-subgroup bridge, not
+the item-completion conditions.
 
 The label sets of the 2007 and 2011 sides were compared code by code on 29 September 2026 against the provider's
 value-label file (metadata only) and both questionnaires, for all 254 entry-wave pairs of the licensed run. Three
@@ -348,7 +384,26 @@ v1.1 (the mass diagnostic assessing every nominal indicator with its question's 
 `04`'s outputs unchanged, the estimates, q-values and classifications of every column unchanged); the aggregate outputs
 of that repetition are the run behind Section 10 of manuscript v1.1 and tag `paper-v1.1`, and
 `check_manuscript_values_T2.R` reproduced all 157 quoted quantities from them (the run behind v1.0, tag `paper-v1.0`,
-differs from it only in the mass-diagnostic columns and the scope files). The 2019-episode battery (scripts 11 and 11b) was not repeated: it does not read the item
+differs from it only in the mass-diagnostic columns and the scope files). **Kit v1.2 (30 September 2026) changes the covariate-standardised entry-wave correction** (§3c: the entry-wave
+selection term integrated, like the fresh prediction, over the survivors' covariate distribution; `panelcond` 0.1.6);
+the unadjusted estimators, the diagnostics and the mass diagnostic are unchanged. Scripts `15_panelcond_designs.R`
+(v1.2) and `15b_item_flags.R` were repeated on the same derived file on 1 October 2026 (JST; R 4.6.0 on macOS,
+`panelcond` 0.1.6, `data.table` 1.18.4, `haven` 2.5.5; 500 bootstrap replications, seed 20260915; about 15 minutes).
+Relative to the v1.1 run, the 713 `ec_adj` rows of `15_designs_items.csv` (both dose definitions, all families)
+carry new estimates, bootstrap standard errors and q-values: the median absolute change of an estimate is
+$1.2 \times 10^{-4}$ and the largest $.40$ (the monthly housing payment in thousand yen, a class-A item whose
+survivors partly lack an entry answer); four classifications change (exact dose, substantive family: a spouse working
+as a family employee, `DQ44_1__5`, affected to undetermined, and how often the spouse does the laundry, `DQ45B`,
+equivalent to undetermined, both class C; any dose: `DQ54_2K` and the nonresponse indicator of `DQ02_2`), so that the
+standardised counts are 22 in the main analysis (23 before), 3 class-C columns among them (4), 22 on the common set
+(23), 19 in the A+B family (unchanged), 22 with no routing exclusion (23) and 24 with class D admitted (25); the
+three items flagged by all five designs and the response-style ranges are unchanged (the style composites have an
+entry answer for every survivor, so the two rules coincide there). The analytic columns (`se_analytic` of the `ec`
+rows; `T1_stat`, `T1_p`, `T2_stat`, `T2_p` in `15_tests_items.csv`) also differ from the v1.1 run, because that run
+used `panelcond` 0.1.2 and these carry the share terms of 0.1.4; no quoted number uses them. Every bootstrap column of
+every other estimator, the diagnostics, the mass diagnostic and every other file are identical to the v1.1 run. The
+aggregate outputs of this repetition are the run behind Section 10 of manuscript v1.2 and tag `paper-v1.2`, and
+`check_manuscript_values_T2.R` reproduced all 158 quoted quantities from them. The 2019-episode battery (scripts 11 and 11b) was not repeated: it does not read the item
 specification table, and its run records name the same input. The frozen run of 24 September 2026 (478 items, the run
 behind versions 0.5 to 0.10) is superseded; its outputs are kept by the author but are no longer quoted. The synthetic
 input was regenerated with the items that exercise the new rules (its SHA-256 in the archive README changes

@@ -3,10 +3,13 @@
 # T2 — every number quoted in Section 10 and in the negative-control appendix table, reproduced
 # mechanically from the aggregate outputs of the JLPS pipeline (the counterpart of the simulation
 # checker sims/check_manuscript_values.R). Inputs are aggregates only (cells below ten suppressed);
-# no individual record is read. Version of 2026-09-29 (v1.1): the quoted values are those of the licensed run
-# of 29 September 2026 with kit v1.1 (item specification table R/15_item_scale.csv, whose MD5 the run
-# record 15_env.txt carries and which this checker compares with the table shipped in R/; the mass diagnostic
-# assessing every nominal indicator with its question's reach; the A+B entry-wave scope).
+# no individual record is read. Version of 2026-09-30 (v1.2): the quoted values are those of the licensed run
+# of 30 September 2026 with kit v1.2 and panelcond 0.1.6 (item specification table R/15_item_scale.csv, whose MD5
+# the run record 15_env.txt carries and which this checker compares with the table shipped in R/; the mass
+# diagnostic assessing every nominal indicator with its question's reach; the A+B entry-wave scope; the
+# covariate-standardised entry-wave correction with both regression terms integrated over the survivors'
+# covariates, which changes the ec_adj counts of the v1.1 run: 23 -> 22 in the main analysis, class-C share 4 -> 3).
+# The checker also requires the run record to name panelcond 0.1.6 or later.
 #   Rscript check_manuscript_values_T2.R [<results directory>]            check the quoted values
 #   Rscript check_manuscript_values_T2.R [<results directory>] --selftest check, then check the checker
 #     default results directory: ../../P1_jlps_diagnosis/results
@@ -108,6 +111,8 @@ run_checks <- function(RES, verbose = TRUE) {
   tab_md5 <- if (file.exists(ITEM_TABLE)) unname(tools::md5sum(ITEM_TABLE)) else NA_character_
   chk("the run used the item specification table shipped in R/ (MD5 recorded in 15_env.txt)",
       env_line("15_env.txt", "^item scale: "), paste0("item scale: 15_item_scale.csv md5: ", tab_md5))
+  pcv <- sub("^panelcond:\\s*", "", env_line("15_env.txt", "^panelcond: "))
+  chk("the run used panelcond 0.1.6 or later (recorded in 15_env.txt)", as.numeric(!is.na(pcv) && utils::compareVersion(pcv, "0.1.6") >= 0), 1)
   tb <- if (file.exists(ITEM_TABLE)) fread(ITEM_TABLE, encoding = "UTF-8", colClasses = "character", na.strings = NULL) else data.table(var = character(0), scale = character(0), construct = character(0))
   chk("wave-5 variables in the table / excluded by it / nominal single-choice questions / derived items",
       c(sum(!grepl("^(clock|months):", tb$construct)), sum(tb$scale == "exclude"), sum(tb$scale == "nominal"), sum(grepl("^(clock|months):", tb$construct))), UNIV$table)
@@ -154,7 +159,7 @@ run_checks <- function(RES, verbose = TRUE) {
   ## the A+B scope (kit v1.1): the entry-wave families recomputed within classes A and B, and T_NS by scope
   scn <- function(e, sco, col) one(sc[estimator == e & scope == sco], paste("scope", e, sco))[[col]]
   chk("A+B scope: columns / flagged ec / flagged ec_adj (28 and 19 over 181)", c(scn("ec", "A+B (same question at entry)", "n_items"), scv("ec", "A+B (same question at entry)"), scv("ec_adj", "A+B (same question at entry)")), EC$ab)
-  chk("class-C columns among the main entry-wave flags (5 and 4)", c(one(cb[cls == "C"], "class C")$n_affected_main_q, one(rd("15_ec_counts_by_class.csv")[dose_def == "exact" & estimator == "ec_adj" & cls == "C"], "class C, ec_adj")$n_affected_main_q), EC$c_flags)
+  chk("class-C columns among the main entry-wave flags (5 and 3)", c(one(cb[cls == "C"], "class C")$n_affected_main_q, one(rd("15_ec_counts_by_class.csv")[dose_def == "exact" & estimator == "ec_adj" & cls == "C"], "class C, ec_adj")$n_affected_main_q), EC$c_flags)
   chk("the class-C columns carry no flag in the A+B family (they are outside it)", c(one(cb[cls == "C"], "class C")$n_affected_ab_q, one(cb[cls == "D"], "class D")$n_affected_ab_q), c(0, 0))
   chk("T_NS by scope: main 39 of 268; A+B 24 of 181", c(scn("ec", "main (A+B+C)", "n_T1_reject"), scn("ec", "main (A+B+C)", "n_T1_tests"), scn("ec", "A+B (same question at entry)", "n_T1_reject"), scn("ec", "A+B (same question at entry)", "n_T1_tests")), c(DIAG$ns, EC$ab_tns))
   chk("T_NS on classes A and B (13.3%)", round(scn("ec", "A+B (same question at entry)", "n_T1_reject") / scn("ec", "A+B (same question at entry)", "n_T1_tests"), 3), 0.133, 5e-4)
@@ -359,11 +364,11 @@ run_checks <- function(RES, verbose = TRUE) {
 ## 523 columns = 284 binary + 102 ordered + 41 continuous items + 90 indicators + 6 derived items
 UNIV <- list(table = c(540, 53, 15, 6), n = 523, by_scale = c(284, 102, 41, 90, 6))
 ## entry-wave counterparts: 320 columns; 16 of them routing-flagged, 35 class D, 269 main (A, B, C); in the counts 181 (A + B) + 87 (C) = 268, 35 (D) outside
-EC <- list(status = c(320, 16, 35, 269), by_class = c(181, 87, 35), ab = c(181, 28, 19), c_flags = c(5, 4), ab_tns = c(24, 181))
-COUNTS <- list(n_naive = 490, n_matched = c(489, 489), flagged = c(30, 21, 13, 29, 23), excluded = c(1, 31, 1), followup = "DQ46Y",
-               common = c(18, 16, 9, 29, 23), n_all5 = 3, all5_items = "DQ26, DQ39__1, DQ55_Q", all5_items_semicolon = "DQ26; DQ39__1; DQ55_Q")
+EC <- list(status = c(320, 16, 35, 269), by_class = c(181, 87, 35), ab = c(181, 28, 19), c_flags = c(5, 3), ab_tns = c(24, 181))
+COUNTS <- list(n_naive = 490, n_matched = c(489, 489), flagged = c(30, 21, 13, 29, 22), excluded = c(1, 31, 1), followup = "DQ46Y",
+               common = c(18, 16, 9, 29, 22), n_all5 = 3, all5_items = "DQ26, DQ39__1, DQ55_Q", all5_items_semicolon = "DQ26; DQ39__1; DQ55_Q")
 DIAG <- list(ns = c(39, 268), sd = c(43, 489), sd_nr = c(73, 409), share_ns = 0.146, share_sd = 0.088, share_nr = 0.178, grid4 = c(50, 73))   # rejections and denominators (licensed run)
-SENS <- list(t10 = c(32, 30, 21, 13, 29, 23, 3), t20 = c(32, 30, 21, 13, 29, 23, 3), none = c(0, 31, 21, 14, 29, 23, 3))   # routing-threshold sensitivity (licensed run)
+SENS <- list(t10 = c(32, 30, 21, 13, 29, 22, 3), t20 = c(32, 30, 21, 13, 29, 22, 3), none = c(0, 31, 21, 14, 29, 22, 3))   # routing-threshold sensitivity (licensed run)
 ## response-style composites (prespecified item list; common battery at both waves): ranges of d_std over the five designs;
 ## the "v07" values are the composites of the v0.7 rule as run on the present universe (quoted in the text for the record)
 STYLE <- list(ext_range = c(-0.31, -0.22), mid_range = c(0.19, 0.21), n_rating = c(46, 46, 42), n_mid = 25, n_mid_all = 28, n_freq_added = 24,
@@ -413,6 +418,11 @@ if (SELFTEST) {
               csv_edit("15_ec_scope_sensitivity.csv", function(x) x[!(scope == "A+B (same question at entry)" & estimator == "ec")]))
   expect_fail("the v0.7-rule rows of the style sensitivity file altered (15_style_sensitivity.csv)",
               csv_edit("15_style_sensitivity.csv", function(x) x[battery == "v07_asrun" & indicator == "ext" & estimator == "naive", d_std := d_std + 0.01]))
+  expect_fail("an earlier panelcond version recorded by 15_env.txt (0.1.5)", function(d) {
+    x <- readLines(file.path(d, "15_env.txt")); x <- sub("^panelcond: .*", "panelcond: 0.1.5", x)
+    writeLines(x, file.path(d, "15_env.txt")) })
+  expect_fail("a class-C column's standardised flag altered (15_ec_counts_by_class.csv)",
+              csv_edit("15_ec_counts_by_class.csv", function(x) x[dose_def == "exact" & estimator == "ec_adj" & cls == "C", n_affected_main_q := n_affected_main_q + 1L]))
   expect_fail("another input named by 11_env.txt", function(d) {
     x <- readLines(file.path(d, "11_env.txt")); x <- sub("^input sha256: .*", paste("input sha256:", strrep("0", 64)), x)
     writeLines(x, file.path(d, "11_env.txt")) })

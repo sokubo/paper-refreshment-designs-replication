@@ -3,7 +3,7 @@
 "exact","A_substantive","sm",88,6,3,79,0.0328,0.545
 "exact","A_substantive","ssm",88,5,0,83,0.0373,0.58
 "exact","A_substantive","ec",76,4,19,53,0.0303,0.461
-"exact","A_substantive","ec_adj",76,4,20,52,0.0293,0.461
+"exact","A_substantive","ec_adj",76,4,20,52,0.0292,0.461
 "exact","B_itemnonresp","naive",41,0,40,1,0.0237,0.244
 "exact","B_itemnonresp","sm",41,0,35,6,0.0241,0.39
 "exact","B_itemnonresp","ssm",41,0,35,6,0.0392,0.439
@@ -23,7 +23,7 @@
 "any","A_substantive","sm",88,20,3,65,0.0646,0.386
 "any","A_substantive","ssm",88,9,0,79,0.0576,0.398
 "any","A_substantive","ec",76,4,28,44,0.0247,0.421
-"any","A_substantive","ec_adj",76,4,28,44,0.0232,0.461
+"any","A_substantive","ec_adj",76,4,28,44,0.0233,0.461
 "any","B_itemnonresp","naive",41,0,39,2,0.027,0.341
 "any","B_itemnonresp","sm",41,0,36,5,0.0268,0.512
 "any","B_itemnonresp","ssm",41,0,34,7,0.0339,0.488

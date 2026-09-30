@@ -17,6 +17,7 @@ kit/R/15_mass_ratio.R
 kit/R/15_panelcond_designs.R
 kit/R/15_style_items.csv
 kit/R/15_style_items.R
+kit/R/15_test_ec_adj.R
 kit/R/15_test_mass_ratio.R
 kit/R/15_test_style_items.R
 kit/R/15b_item_flags.R

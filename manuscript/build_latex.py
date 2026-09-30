@@ -20,8 +20,8 @@ LTX  = os.path.join(HERE, 'latex')
 
 # --- the two footnotes on the title page -------------------------------------
 ARCHIVE_REPO = 'https://github.com/sokubo/paper-refreshment-designs-replication'
-ARCHIVE_TAG = 'paper-v1.1'
-ARCHIVE_COMMIT = 'e008561'          # computational commit of the published snapshot (paper-v1.0 was 3ae4e29)
+ARCHIVE_TAG = 'paper-v1.2'
+ARCHIVE_COMMIT = 'COMMIT8'          # filled in after the release check of the published snapshot (paper-v1.1 was e008561)
 TITLE_THANKS = (
     r"\thanks{This research benefited from discussions and feedback during presentations at "
     r"the Institute of Social Science, University of Tokyo, the Japanese Association for Mathematical "
@@ -44,8 +44,8 @@ KEYWORDS = (r"\noindent\textbf{Keywords:} attrition; panel conditioning; partial
 
 _src = open(os.path.join(HERE, 'main.qmd')).read()
 _ph = sorted(set(re.findall(r'\[\[[A-Z0-9_]+\]\]', _src)))
-if _ph or 'COMMIT7' in ARCHIVE_COMMIT:
-    print('WARNING: unfilled placeholders:', _ph + (['ARCHIVE_COMMIT'] if 'COMMIT7' in ARCHIVE_COMMIT else []))
+if _ph or 'COMMIT' in ARCHIVE_COMMIT:
+    print('WARNING: unfilled placeholders:', _ph + (['ARCHIVE_COMMIT'] if 'COMMIT' in ARCHIVE_COMMIT else []))
 subprocess.run(['quarto', 'render', 'main.qmd', '--to', 'pdf'], cwd=HERE, check=True)
 
 tex_src = os.path.join(HERE, 'main.tex')          # keep-tex output
