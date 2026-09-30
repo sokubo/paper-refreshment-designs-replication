@@ -21,7 +21,7 @@ LTX  = os.path.join(HERE, 'latex')
 # --- the two footnotes on the title page -------------------------------------
 ARCHIVE_REPO = 'https://github.com/sokubo/paper-refreshment-designs-replication'
 ARCHIVE_TAG = 'paper-v1.2'
-ARCHIVE_COMMIT = 'COMMIT8'          # filled in after the release check of the published snapshot (paper-v1.1 was e008561)
+ARCHIVE_COMMIT = 'afa62c8'          # computational commit of the published snapshot (paper-v1.1 was e008561)
 TITLE_THANKS = (
     r"\thanks{This research benefited from discussions and feedback during presentations at "
     r"the Institute of Social Science, University of Tokyo, the Japanese Association for Mathematical "
