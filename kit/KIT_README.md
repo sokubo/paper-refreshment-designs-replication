@@ -100,8 +100,10 @@ regenerated input has the SHA-256 given in the archive README. The expected outp
 were produced with panelcond 0.1.6. With 0.1.5 or earlier the `ec_adj` rows differ for items whose survivors
 lack entry answers or whose 2007 eligibility differs (§3c); with 0.1.2 or 0.1.3 the analytic columns differ as well (`se_analytic` of
 the entry-wave arms in `15_designs_items.csv`; `T1_stat`, `T1_p`, `T2_stat`, `T2_p` in
-`15_tests_items.csv`) because those versions omitted the share terms; every bootstrap column and every
-summary file is identical, and no quoted number uses an analytic column.
+`15_tests_items.csv`) because those versions omitted the share terms. The analytic-variance correction introduced in
+version 0.1.4 did not change the bootstrap results. In contrast, version 0.1.6 changes the covariate-standardised
+entry-wave functional, so its estimates, bootstrap standard errors, q-values and affected summaries were recomputed
+for manuscript v1.2 (§5). No quoted number uses an analytic-variance column.
 
 About a minute end to end. It exercises the principal computational paths of the 2011-episode
 workflow, including the entry-wave correction (78 of the 89 universe columns have an entry-wave
@@ -286,11 +288,13 @@ entry-wave term exists. The former `R/15_item_exclude.csv` is superseded by `in_
 
 **The entry-wave corrections as implemented: respondent sets and restrictions (kit v1.2, 30 September 2026).**
 Four sets of respondents enter the two entry-wave corrections. $T$ is the survivors with a substantive answer at
-the comparison wave $t$ (the continuing cohort's arm of every design; for an item asked only of a subgroup its
-members are eligible at $t$ by construction). $E$ is every entrant of the continuing cohort with a substantive
-entry answer, within the 2007 subgroup $G_e$ of a class-C item and among everyone otherwise. $P = T \cap E$ is the
-survivors of $T$ who also have a substantive entry answer (for class C, who were also eligible at entry). $F$ is
-the fresh entrants with a substantive answer at their first wave. The unadjusted correction (`ec`) is
+the comparison wave $t$ (the continuing cohort's arm for the entry-wave corrections and survival matching;
+symmetric matching additionally requires a response at $t + 1$; for an item asked only of a subgroup its members
+are eligible at $t$ by construction). $E$ is every entrant of the continuing cohort who was eligible for the item at
+entry, $G_e$, and gave a substantive entry answer: $G_e$ is whoever the entry questionnaire's routing reaches, which
+for a class-C item is the 2007 subgroup named in `ec_subgroup` and for an item asked of everyone is the whole cohort.
+$P = T \cap E$ is the survivors of $T$ who were eligible at entry and have a substantive entry answer. $F$ is the
+fresh entrants with a substantive answer at their first wave. The unadjusted correction (`ec`) is
 $$\bar Y_T \;-\; (\bar Y^{e}_P - \bar Y^{e}_E) \;-\; \bar Y^{*}_F,$$
 with $\bar Y^{e}$ the mean entry answer. Its target is the survivors' mean shift $h^{T} = \mathbb{E}[Y_t - Y^{*}_t \mid T]$,
 and it equals that target exactly when
@@ -298,27 +302,33 @@ $$\mathbb{E}[Y^{*}_t \mid T] - \mathbb{E}[Y^{*}_t \mid F] \;=\; \mathbb{E}[Y_e \
 which decomposes into (i) representative item completion, $\mathbb{E}[Y^{*}_t \mid F] = \mathbb{E}[Y^{*}_t \mid G_t]$ for the
 fresh answerers and $\mathbb{E}[Y_e \mid E] = \mathbb{E}[Y_e \mid G_e]$, $\mathbb{E}[Y_e \mid P] = \mathbb{E}[Y_e \mid T \cap G_e]$ for
 the entry answerers, and (ii) the bridge $\mathbb{E}[Y^{*}_t \mid T] - \mathbb{E}[Y^{*}_t \mid G_t] = \mathbb{E}[Y_e \mid T \cap G_e] - \mathbb{E}[Y_e \mid G_e]$.
-For classes A and B, $G_e = G_t$ is the whole cohort (or the same subgroup at both waves) and (ii) is B4 of the paper
-with the response indicator in the conditioning set; for class C the two subgroups differ (a person who marries
-between the waves belongs to $G_t$ and not to $G_e$), and (ii) is a transport of the selection bias across them,
-which B4 within one fixed population does not imply and which matching wording and coding do not establish (an
-artificial population in which eligibility at $t$ is the outcome itself gives $-.5$ with no conditioning). Neither
-(i) nor (ii) is removable by the refreshment sample alone; `R/15_test_ec_adj.R` runs two artificial populations in
-which item completion at entry or in the fresh cohort depends on the answer, giving $-1/2$ and $+1/6$ with no
-conditioning for both corrections.
+When the eligible population is unchanged across waves ($G_e = G_t$), (ii) reduces to B4 of the paper with the
+response indicator included in the conditioning set. The classes A--D describe questionnaire comparability (wording,
+options, codes, filters as printed) and do not by themselves guarantee unchanged eligibility: membership in groups
+such as the non-working (the follow-up `DQ02_2`, class A) or the unmarried (the reasons for remaining single, class
+B) can change even under an identical routing rule. Whenever the eligible population changes between the waves ---
+for every class-C item by construction, and for any item routed on a status that can change --- a person who marries
+or stops working between the waves belongs to one eligible population and not to the other, and (ii) is a transport
+of the selection bias across the two populations, which B4 within one fixed population does not imply and which
+matching wording and coding do not establish. Two artificial populations with no conditioning give $-.5$: one in
+which eligibility at $t$ is the outcome itself, and one in which the same routing rule is applied at both waves but
+the status it is applied to changes (`R/15_test_ec_adj.R`). Neither (i) nor (ii) is removable by the refreshment
+sample alone; the same test runs two artificial populations in which item completion at entry or in the fresh cohort
+depends on the answer, giving $-1/2$ and $+1/6$ with no conditioning for both corrections, and one with a
+heterogeneous conditioning effect, which both corrections recover as its average over $T$.
 
 The covariate-standardised correction (`ec_adj`; `panelcond` 0.1.6, `pc_point()`) fits three least-squares
 regressions of the item on the entry covariates (sex, centred birth year, education with a missing indicator):
 $m_P$ of the entry answer on $P$, $m_E$ of the entry answer on $E$, and $m_F$ of the fresh answer on $F$. It is
 $$\bar Y_T \;-\; \overline{(m_P - m_E)}_T \;-\; \overline{m_F}_T,$$
 every average being taken over the covariate distribution of $T$: the unadjusted correction with the entry-wave
-selection term and the fresh mean replaced by regression predictions integrated over one population. It equals
-$h^{T}$ when the two conditions above hold within every covariate value (the conditional bridge
-$\delta_e(t \mid x) = \delta_e(e \mid x)$ of the paper, with the response indicators in the conditioning sets, and
-representative completion within covariate values) and the three regressions are correctly specified; with linear
-projections the statement holds for the projections averaged over $T$. For covariate values of $T$ outside those of
-$P$ the entry fit is extrapolated linearly, which for class-C items is the case of survivors who were not eligible
-at entry. Kit v1.1 and `panelcond` 0.1.5 averaged the entry residual $\bar Y^{e}_P - \overline{m_E}_P$ over $P$ and the
+selection term and the fresh mean replaced by regression predictions integrated over one population. Sufficient
+conditions for it to equal $h^{T}$ are the conditional bridge $\delta_e(t \mid x) = \delta_e(e \mid x)$ of the paper
+and representative item completion within covariate values, with the response indicators included in the
+conditioning sets; the regression implementation further assumes correctly specified conditional means (with linear
+projections the statement holds for the projections averaged over $T$). Where the covariate support of $T$ extends
+beyond that of $P$, the entry fit is extrapolated linearly, and its interpretation at those values rests on the
+maintained extrapolation model. Kit v1.1 and `panelcond` 0.1.5 averaged the entry residual $\bar Y^{e}_P - \overline{m_E}_P$ over $P$ and the
 fresh prediction over $T$, two covariate distributions whenever $P \ne T$ (survivors without an entry answer; every
 class-C item); under that rule equal conditional selection terms do not give a zero bias (`R/15_test_ec_adj.R`: a
 sixteen-type population with no conditioning, equal selection terms within each covariate value and an exact raw
@@ -327,8 +337,11 @@ analysis keeps the class-C items under the stated bridge, and `15_ec_scope_sensi
 `A+B (same question at entry)`, with the Benjamini--Hochberg families recomputed within classes A and B alone
 (`n_affected`, `n_equivalent`) and the $\mathcal{T}_{\mathrm{NS}}$ rejections counted within each scope (`n_T1_tests`,
 `n_T1_reject`); `15_ec_ab_items.csv` lists, item by item, the status under the main family and under the A+B
-family, and `15_ec_counts_by_class.csv` adds `n_affected_ab_q`. The A+B scope removes the cross-subgroup bridge, not
-the item-completion conditions.
+family, and `15_ec_counts_by_class.csv` adds `n_affected_ab_q`. The A+B scope excludes the documented class-C questionnaire
+differences; the bridge (ii) and the item-completion conditions (i) remain necessary for any included item whose
+eligible population changes, so it is a sensitivity comparison, not a fixed-population design. A classification of
+every item by eligibility (asked of everyone, fixed eligibility, time-varying eligibility), separate from
+questionnaire comparability, is not part of the specification table.
 
 The label sets of the 2007 and 2011 sides were compared code by code on 29 September 2026 against the provider's
 value-label file (metadata only) and both questionnaires, for all 254 entry-wave pairs of the licensed run. Three
@@ -403,7 +416,10 @@ rows; `T1_stat`, `T1_p`, `T2_stat`, `T2_p` in `15_tests_items.csv`) also differ 
 used `panelcond` 0.1.2 and these carry the share terms of 0.1.4; no quoted number uses them. Every bootstrap column of
 every other estimator, the diagnostics, the mass diagnostic and every other file are identical to the v1.1 run. The
 aggregate outputs of this repetition are the run behind Section 10 of manuscript v1.2 and tag `paper-v1.2`, and
-`check_manuscript_values_T2.R` reproduced all 158 quoted quantities from them. The 2019-episode battery (scripts 11 and 11b) was not repeated: it does not read the item
+`check_manuscript_values_T2.R` reproduced all 158 quoted quantities from them. **Kit v1.3 (1 October 2026) changes no computation**: `R/15_test_ec_adj.R` gains three
+fixtures (a heterogeneous effect, a recoded covariate, an unchanged routing rule with changed eligible members), and
+§3c distinguishes questionnaire comparability from unchanged eligibility; the aggregate outputs of the v1.2 run are
+the run behind Section 10 of manuscript v1.3 and tag `paper-v1.3`, and the checker's 158 quantities are unchanged. The 2019-episode battery (scripts 11 and 11b) was not repeated: it does not read the item
 specification table, and its run records name the same input. The frozen run of 24 September 2026 (478 items, the run
 behind versions 0.5 to 0.10) is superseded; its outputs are kept by the author but are no longer quoted. The synthetic
 input was regenerated with the items that exercise the new rules (its SHA-256 in the archive README changes

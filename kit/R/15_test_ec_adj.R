@@ -9,6 +9,12 @@
 #      over P and the fresh prediction over T, gives 1/12.
 #   2. entry item completion depending on the answer: EC = EC-adj = -1/2 with no conditioning.
 #   3. fresh item completion depending on the answer: EC = EC-adj = +1/6 with no conditioning.
+#   4. P = T: the v1.2 rule and the v1.1 rule coincide.
+#   5. (kit v1.3, 2026-10-01) a heterogeneous conditioning effect is recovered as its average over T by both corrections.
+#   6. (kit v1.3) reversing the coding of a fully supported binary covariate leaves EC-adj unchanged.
+#   7. (kit v1.3) the same routing rule at both waves applied to a status that changes between them: no attrition, no
+#      conditioning, every eligible person answers, B4 holds in the fixed population, yet EC = EC-adj = -1/2, because the
+#      eligible populations at entry and at the comparison wave differ (an unchanged rule is not an unchanged membership).
 # Usage: Rscript R/15_test_ec_adj.R [path/to/15_panelcond_designs.R]
 # ============================================================
 args <- commandArgs(trailingOnly = TRUE)
@@ -77,6 +83,23 @@ ye4 <- z$x * z$u + z$x / 2
 d <- run_engine(yt, yt, ye4, S, z$x, z$x)
 old4 <- mean(yt[io]) - (mean(ye4[io]) - ols_pred(ye4, Xo, Xo[io, , drop = FALSE])) - ols_pred(yt, Xo, Xo[io, , drop = FALSE])
 expect("fixture 4: P = T, EC-adj equals the v1.1 rule", c(d$ec_adj, old4), c(0, 0))
+
+## 5. a heterogeneous conditioning effect h = X/5 + 1/10 added to the continuing cohort's observed outcome (fixture 1
+##    otherwise): both corrections return the average of h over the survivors T.
+h <- z$x / 5 + 1 / 10
+e5 <- run_engine(yt + h, yt, ye, S, z$x, z$x)
+expect("fixture 5: heterogeneous effect recovered as its average over T (EC, EC-adj)", c(e5$ec, e5$ec_adj), rep(mean(h[S]), 2))
+
+## 6. reversing the coding of the binary covariate (fully supported in every fit) leaves EC-adj unchanged.
+e6 <- run_engine(yt, yt, ye, S, 1 - z$x, 1 - z$x)
+expect("fixture 6: EC-adj invariant to recoding a supported binary covariate", e6$ec_adj, a$ec_adj)
+
+## 7. the same routing rule at both waves ("answer if the current status Z = 1"), with Z = U at entry and Z = Y at the
+##    comparison wave; Y and U independent Bernoulli(1/2); no attrition; Y_e = Y_t* = Y_t = Y; everyone eligible answers.
+ye7 <- z2$y; ye7[z2$u == 0] <- NA
+yt7 <- z2$y; yt7[z2$y == 0] <- NA
+e7 <- run_engine(yt7, yt7, ye7, rep(TRUE, nrow(z2)), z2$w, z2$w)
+expect("fixture 7: unchanged rule, changed eligible members (EC, EC-adj)", c(e7$ec, e7$ec_adj), c(-1 / 2, -1 / 2))
 
 cat("\n", n_ok + n_fail, " checks: ", n_ok, " ok, ", n_fail, " failed\n", sep = "")
 if (n_fail > 0) quit(status = 1)

@@ -3,7 +3,7 @@
 # T2 — every number quoted in Section 10 and in the negative-control appendix table, reproduced
 # mechanically from the aggregate outputs of the JLPS pipeline (the counterpart of the simulation
 # checker sims/check_manuscript_values.R). Inputs are aggregates only (cells below ten suppressed);
-# no individual record is read. Version of 2026-09-30 (v1.2): the quoted values are those of the licensed run
+# no individual record is read. Version of 2026-09-30 (v1.2; unchanged for manuscript v1.3 of 2026-10-01, which changes no number): the quoted values are those of the licensed run
 # of 30 September 2026 with kit v1.2 and panelcond 0.1.6 (item specification table R/15_item_scale.csv, whose MD5
 # the run record 15_env.txt carries and which this checker compares with the table shipped in R/; the mass
 # diagnostic assessing every nominal indicator with its question's reach; the A+B entry-wave scope; the
