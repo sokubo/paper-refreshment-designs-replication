@@ -58,10 +58,12 @@ checker requires the three run records to name one and the same file with the SH
 Requires R (≥ 4.3) with `haven`, `data.table`, and `panelcond`
 (`remotes::install_github("sokubo/panelcond@v0.1.6")`; 0.1.6 or later). Version 0.1.6 changes the
 covariate-standardised entry-wave correction (§3c), so the `ec_adj` rows depend on the package version; the
-design run behind manuscript v1.2 used 0.1.6 (recorded in `15_env.txt`; the checker requires it). Every standard error
-and diagnostic quoted in Section 10 comes from the joint person bootstrap of `15_panelcond_designs.R`, which
-recomputes every arm and every group share in each replicate, so the correction of the analytic entry-wave and
-diagnostic variances in 0.1.4 (they now include the estimated shares) does not change any quoted number. The design run takes about 13 minutes with 500
+design run behind manuscript v1.2 used 0.1.6 (recorded in `15_env.txt`; the checker requires it). For the Section 10
+design comparisons, standard errors and diagnostic uncertainties come from the joint person bootstrap in
+`15_panelcond_designs.R`, which recomputes every arm and group share in each replicate. The analytic-variance
+correction in version 0.1.4 therefore did not change those bootstrap-based results. The negative-control item-level
+uncertainties and the independence-based pooled benchmark are computed separately in `11_negcontrol_w13.R`; the
+pooled person-bootstrap uncertainty is computed in `11b_negcontrol_w13_boot.R`. The design run takes about 13 minutes with 500
 bootstrap replications over two dose definitions; `11b` takes a few minutes with 2,000 replications.
 
 `11_negcontrol_w13.R` and `11b_negcontrol_w13_boot.R` read an item map,
@@ -419,7 +421,8 @@ aggregate outputs of this repetition are the run behind Section 10 of manuscript
 `check_manuscript_values_T2.R` reproduced all 158 quoted quantities from them. **Kit v1.3 (1 October 2026) changes no computation**: `R/15_test_ec_adj.R` gains three
 fixtures (a heterogeneous effect, a recoded covariate, an unchanged routing rule with changed eligible members), and
 §3c distinguishes questionnaire comparability from unchanged eligibility; the aggregate outputs of the v1.2 run are
-the run behind Section 10 of manuscript v1.3 and tag `paper-v1.3`, and the checker's 158 quantities are unchanged. The 2019-episode battery (scripts 11 and 11b) was not repeated: it does not read the item
+the run behind Section 10 of manuscripts v1.3 and v1.4 (tags `paper-v1.3`, `paper-v1.4`; v1.4 is a copy-edit of 1 October 2026
+that changes no computation), and the checker's 158 quantities are unchanged. The 2019-episode battery (scripts 11 and 11b) was not repeated: it does not read the item
 specification table, and its run records name the same input. The frozen run of 24 September 2026 (478 items, the run
 behind versions 0.5 to 0.10) is superseded; its outputs are kept by the author but are no longer quoted. The synthetic
 input was regenerated with the items that exercise the new rules (its SHA-256 in the archive README changes

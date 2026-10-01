@@ -20,8 +20,8 @@ LTX  = os.path.join(HERE, 'latex')
 
 # --- the two footnotes on the title page -------------------------------------
 ARCHIVE_REPO = 'https://github.com/sokubo/paper-refreshment-designs-replication'
-ARCHIVE_TAG = 'paper-v1.3'
-ARCHIVE_COMMIT = 'b95d952'          # computational commit of the published snapshot (paper-v1.2 was afa62c8)
+ARCHIVE_TAG = 'paper-v1.4'
+ARCHIVE_COMMIT = 'COMMIT10'         # filled in after the release check of the published snapshot (paper-v1.3 was b95d952)
 TITLE_THANKS = (
     r"\thanks{This research benefited from discussions and feedback during presentations at "
     r"the Institute of Social Science, University of Tokyo, the Japanese Association for Mathematical "
@@ -37,7 +37,15 @@ AUTHOR_THANKS = (
     r"\thanks{Department of Sociology, Toyo University, Tokyo, Japan. "
     r"Email: okubo080@toyo.jp. Website: sokubo.github.io.}"
 )
-DATE = 'September 29, 2026'
+# the displayed date is taken from the YAML `date:` of main.qmd (ISO), spelled out in the house format, so that the
+# PDF cannot drift from the source metadata (up to v1.3 it was a constant here; the v1.3 PDF showed September 29, 2026
+# while the source said 2026-10-01)
+import datetime as _dt
+_m = re.search(r'^date:\s*"?(\d{4})-(\d{2})-(\d{2})"?\s*$', open(os.path.join(HERE, 'main.qmd')).read(), flags=re.M)
+if not _m:
+    raise SystemExit('build_latex.py: no ISO date: line in main.qmd')
+_d = _dt.date(int(_m.group(1)), int(_m.group(2)), int(_m.group(3)))
+DATE = _d.strftime('%B ') + str(_d.day) + _d.strftime(', %Y')
 KEYWORDS = (r"\noindent\textbf{Keywords:} attrition; panel conditioning; partial identification; "
             r"refreshment samples; rotation panels; survey design")
 # -----------------------------------------------------------------------------
