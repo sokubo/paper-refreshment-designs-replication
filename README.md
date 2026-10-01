@@ -19,7 +19,7 @@ release-check records (`RELEASE_CHECK*`), which are written after the manifest.
 
 ## Checked commit and release record
 Computational commit checked against the numerical results of the manuscript: `722c79a4116afd4a68ad2b4b7993998ec4beb048` — see `RELEASE_CHECK.md`, `RELEASE_CHECK_run.log` (the console output of the clean-copy run) and `RELEASE_CHECK_sessionInfo.txt`. Later commits change only the manuscript (its source, PDF and any figure script under `manuscript/`), documentation and the release record — `git diff --stat 722c79a4116afd4a68ad2b4b7993998ec4beb048 HEAD` lists them — so the computational scripts and outputs are those of the checked commit; after any change to them the release check is rerun and this line is regenerated.
-Tag of the checked release: `paper-v1.4`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
+Tag of the checked release: `paper-v1.5`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
 Third-party reproduction: none. The release record is the author's own re-execution of the published snapshot in a clean copy.
 
 ## Data
