@@ -1,12 +1,12 @@
 # Release check — paper-refreshment-designs-replication
 
-Date: 2026-10-01T02:26:18Z. Snapshot downloaded anonymously (no credentials, no gh CLI) from `https://codeload.github.com/sokubo/paper-refreshment-designs-replication/tar.gz/main`.
+Date: 2026-10-01T04:47:05Z. Snapshot downloaded anonymously (no credentials, no gh CLI) from `https://codeload.github.com/sokubo/paper-refreshment-designs-replication/tar.gz/main`.
 
-- ref: `main`; commit: `b95d952d3c93455bba3eb10b3198f7a8ba9a8e5e`
-- archive SHA-256: `f0c102cd21e30807ed3bf013dda797ec880929255748b9b6d2b5e40f759d5119`
+- ref: `main`; commit: `722c79a4116afd4a68ad2b4b7993998ec4beb048`
+- archive SHA-256: `f6feb21c71d4fd47aa083037e18f7d2a85fab1ff59cc0a62b15d407be0ec2a8c`
 - files in snapshot (excluding FILE_MANIFEST.txt and RELEASE_CHECK*): 81; listed in FILE_MANIFEST.txt: 81; missing from snapshot: 0; not listed in manifest: 0
 - content scan of the published snapshot: 0 file(s) matched
-- clean run: documented sequence executed in a clean copy with shipped outputs set aside (487s); log and sessionInfo kept; comparison below
+- clean run: documented sequence executed in a clean copy with shipped outputs set aside (467s); log and sessionInfo kept; comparison below
 - third-party reproduction: none; this record is the author's own re-execution.
 
 ## Environment of the clean run

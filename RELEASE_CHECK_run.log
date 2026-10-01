@@ -1,4 +1,4 @@
-== sims/Rscript sim1_bounds.R 11:18:11
+== sims/Rscript sim1_bounds.R 13:39:18
    beta h_true p_target n_ok coverage coverage_v1_rule mean_width  mean_hL
 1   0.0    0.0      0.6  200    1.000            1.000      0.582 -0.30140
 2   0.3    0.0      0.6  200    1.000            1.000      0.607 -0.18450
@@ -38,7 +38,7 @@
 10      0.353         0.307
 11      0.424         0.328
 12      0.508         0.383
-== sims/Rscript sim2_multicohort.R 11:20:52
+== sims/Rscript sim2_multicohort.R 13:42:00
 true (population-SD units): tau(13)-tau(9) = 0.00907376, tau(13)-tau(1) = 0.10078530
           cell bias_inc_naive bias_inc_unitG bias_inc_trueG mcse_inc_trueG
 1      matched         0.1522        0.04316       0.002337       0.002449
@@ -74,20 +74,20 @@ V  0.7001135955 0.7604727356         1
 1      0.1507652
 2      0.5989091
 3      0.3514217
-== sims/Rscript sim3_designs.R 11:21:00
+== sims/Rscript sim3_designs.R 13:42:07
 Part A done (0.8 min)
-run time: 4.9 min
+run time: 4.6 min
 done
-== sims/Rscript check_funnel_examples.R > check_funnel_examples_output.txt 11:25:54
-== sims/Rscript check_multiwave_completion.R > check_multiwave_completion_output.txt 11:26:00
-== sims/python3 check_design_rank.py > check_design_rank_output.txt 11:26:05
-== sims/Rscript check_manuscript_values.R 11:26:17
+== sims/Rscript check_funnel_examples.R > check_funnel_examples_output.txt 13:46:43
+== sims/Rscript check_multiwave_completion.R > check_multiwave_completion_output.txt 13:46:49
+== sims/python3 check_design_rank.py > check_design_rank_output.txt 13:46:53
+== sims/Rscript check_manuscript_values.R 13:47:04
 66 assertions passed, 0 failed
-== sims/Rscript check_manuscript_values.R --selftest 11:26:18
+== sims/Rscript check_manuscript_values.R --selftest 13:47:04
 66 assertions passed, 0 failed
 selftest perturb : fails as it should
 selftest droprow : fails as it should
-== sims/python3 compare_outputs.py --selftest output_shipped 11:26:18
+== sims/python3 compare_outputs.py --selftest output_shipped 13:47:05
 self-test of compare_outputs.py on corrupted copies of output_shipped (20 cases)
 
    unmodified copy                                                                      -> pass   as expected
