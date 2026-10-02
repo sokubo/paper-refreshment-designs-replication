@@ -60,3 +60,21 @@ sim3_variance_check.csv                9.975e-18           208           within 
 files compared: 13; identical: 5; within tolerance: 8; FAILED: 0; largest numeric difference: 1.133e-14; tol: 1e-08
 comparison passed
 ```
+
+## Follow-up check — 2026-10-02T05:53:18Z
+
+Snapshot downloaded anonymously from `https://codeload.github.com/sokubo/paper-refreshment-designs-replication/tar.gz/arxiv-2610.01654v1`.
+
+- ref: `arxiv-2610.01654v1`; commit: `98423a954ad05d8c29040aab618df3ec50f0b15b`
+- archive SHA-256: `30dab7a59e638031e75ff2bf1dfc378316715f6d30a2dedc32530bb97f66d051`
+- files in snapshot (excluding FILE_MANIFEST.txt and RELEASE_CHECK*): 81; listed in FILE_MANIFEST.txt: 81; missing from snapshot: 0; not listed in manifest: 0
+- content scan of the published snapshot: 0 file(s) matched
+- comparison with the checked commit: 6 file(s) differ from the checked commit `f4f7c2b3516c17421e781c9a9c9237aed3914f90` (RELEASE_CHECK* excluded)
+
+- CITATION.cff (differs)
+- README.md (differs)
+- manuscript/build_latex.py (differs)
+- manuscript/main.html (differs)
+- manuscript/main.pdf (differs)
+- manuscript/main.qmd (differs)
+- clean run: not repeated (the computational content is that of the checked commit when the list above contains documentation files only)
