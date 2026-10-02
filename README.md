@@ -1,7 +1,7 @@
 # Replication archive: Identifying Panel Conditioning with Refreshment Samples: Sharp Bounds and Design Assumptions
 
 Code and outputs for every simulation, deterministic check, design computation and figure of the paper, and the code (with a synthetic example) that produces the aggregates of Section 10 from the licensed data.
-Preprint: arXiv:XXXX.XXXXX (to be filled at posting). Author: Shoki Okubo (Toyo University).
+Preprint: arXiv:2610.01654. Author: Shoki Okubo (Toyo University).
 
 ## Contents
 - kit
@@ -19,7 +19,7 @@ release-check records (`RELEASE_CHECK*`), which are written after the manifest.
 
 ## Checked commit and release record
 Computational commit checked against the numerical results of the manuscript: `f4f7c2b3516c17421e781c9a9c9237aed3914f90` — see `RELEASE_CHECK.md`, `RELEASE_CHECK_run.log` (the console output of the clean-copy run) and `RELEASE_CHECK_sessionInfo.txt`. Later commits change only the manuscript (its source, PDF and any figure script under `manuscript/`), documentation and the release record — `git diff --stat f4f7c2b3516c17421e781c9a9c9237aed3914f90 HEAD` lists them — so the computational scripts and outputs are those of the checked commit; after any change to them the release check is rerun and this line is regenerated.
-Tag of the checked release: `paper-v1.5`. Tag matching the posted preprint version: to be added at posting (`arxiv-<id>v<n>`).
+Tag of the checked release: `paper-v1.5`. Tag matching the posted preprint version: `arxiv-2610.01654v1`.
 Third-party reproduction: none. The release record is the author's own re-execution of the published snapshot in a clean copy.
 
 ## Data
@@ -95,4 +95,4 @@ are theorems, and the appendix that supports them is synthetic throughout.
 `figures/`. Render: `quarto render main.qmd --to html` and `python3 build_latex.py`.
 
 ## Citation
-Okubo, S. (2026). Identifying Panel Conditioning with Refreshment Samples: Sharp Bounds and Design Assumptions. Working paper. arXiv:XXXX.XXXXX.
+Okubo, S. (2026). Identifying Panel Conditioning with Refreshment Samples: Sharp Bounds and Design Assumptions. arXiv preprint arXiv:2610.01654.
